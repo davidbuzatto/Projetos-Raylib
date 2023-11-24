@@ -7,7 +7,6 @@
 
 /**
  * TODO list:
- *     rotate pieces;
  *     verify completed lines (sum to score);
  *     increase speed (time to time or based on score value?);
  *     collisions for left and right;
@@ -27,8 +26,15 @@
 #include <time.h>
 #include "include/raylib.h"
 
-// macros
+#include "tetrominoe_h.h"
+#include "tetrominoe_il.h"
+#include "tetrominoe_l.h"
+#include "tetrominoe_sq.h"
+#include "tetrominoe_s.h"
+#include "tetrominoe_z.h"
+#include "tetrominoe_t.h"
 
+// macros
 
 // enums, structs, unions and custom types
 typedef enum {
@@ -53,7 +59,9 @@ typedef struct {
     int column;
     int width;
     int height;
-    bool data[4][4];
+    bool data[4][4][4];
+    int currentFrame;
+    int dimensions[4][4];
     PieceType type;
     Color color;
     int movementCount;
@@ -95,14 +103,6 @@ typedef struct {
 } GameWorld;
 
 // global variables
-bool dataV[4][4]  = { true, true, true, true };
-bool dataIL[4][4] = { true, true, true, false, false, false, true };
-bool dataL[4][4]  = { true, true, true, false, true };
-bool dataSQ[4][4] = { true, true, false, false, true, true };
-bool dataS[4][4]  = { false, true, true, false, true, true };
-bool dataZ[4][4]  = { true, true, false, false, false, true, true };
-bool dataT[4][4]  = { true, true, true, false, false, true };
-
 const Color BACKGROUND_COLOR = { .r = 230, .g = 230, .b = 230, .a = 255 };
 
 // function prototypes
@@ -114,6 +114,7 @@ void createPiece( PieceType type, int line, int column, GameWorld *gw );
 void createRandomPiece( GameWorld *gw );
 void updatePiece( Piece *piece );
 void drawPiece( Piece *piece );
+void turnPiece( Piece *piece );
 void checkPieceBoundaries( Piece *piece );
 void stopWhenReachedBottom( Piece *piece );
 void stopWhenCollide( Piece *piece, GameWorld *gw );
@@ -131,6 +132,8 @@ int main( void ) {
     // initialization
     const int screenWidth = 600;
     const int screenHeight = 800;
+
+    printf( "%d\n", tetrominoeH[0][0][0] );
 
     ScoreBox scoreBox = {
         .x = 420,
@@ -176,6 +179,7 @@ int main( void ) {
     }*/
 
     //createPiece( H, 0, 3, &gw );
+    //createPiece( H, 0, 3, &gw );
     //createPiece( IL, 0, 3, &gw );
     //createPiece( L, 0, 3, &gw );
     //createPiece( SQ, 0, 4, &gw );
@@ -220,6 +224,15 @@ void input( GameWorld *gw ) {
 
         if ( IsKeyPressed( KEY_DOWN ) || IsKeyPressedRepeat( KEY_DOWN ) ) {
             piece->line++;
+        }
+
+        if ( IsKeyPressed( KEY_UP ) ) {
+            turnPiece( piece );
+        }
+
+        if ( IsKeyPressed( KEY_SPACE ) ) {
+            // TODO
+            printf( "go bottom\n" );
         }
 
     }
@@ -314,49 +327,43 @@ void createPiece( PieceType type, int line, int column, GameWorld *gw ) {
     newPiece->maxCount = 60;
     newPiece->stopped = false;
     newPiece->type = type;
+    newPiece->currentFrame = 0;
 
     switch ( type ) {
         case H:
-            memcpy( newPiece->data, dataV, 16 * sizeof( bool ) );
+            memcpy( newPiece->data, tetrominoeH, 64 * sizeof( bool ) );
+            memcpy( newPiece->dimensions, tetrominoeHDimensions, 16 * sizeof( int ) );
             newPiece->color = BLUE;
-            newPiece->width = 4;
-            newPiece->height = 1;
             break;
         case IL:
-            memcpy( newPiece->data, dataIL, 16 * sizeof( bool ) );
+            memcpy( newPiece->data, tetrominoeIL, 64 * sizeof( bool ) );
+            memcpy( newPiece->dimensions, tetrominoeILDimensions, 16 * sizeof( int ) );
             newPiece->color = DARKBLUE;
-            newPiece->width = 3;
-            newPiece->height = 2;
             break;
         case L:
-            memcpy( newPiece->data, dataL, 16 * sizeof( bool ) );
+            memcpy( newPiece->data, tetrominoeL, 64 * sizeof( bool ) );
+            memcpy( newPiece->dimensions, tetrominoeLDimensions, 16 * sizeof( int ) );
             newPiece->color = ORANGE;
-            newPiece->width = 3;
-            newPiece->height = 2;
             break;
         case SQ:
-            memcpy( newPiece->data, dataSQ, 16 * sizeof( bool ) );
+            memcpy( newPiece->data, tetrominoeSQ, 64 * sizeof( bool ) );
+            memcpy( newPiece->dimensions, tetrominoeSQDimensions, 16 * sizeof( int ) );
             newPiece->color = YELLOW;
-            newPiece->width = 2;
-            newPiece->height = 2;
             break;
         case S:
-            memcpy( newPiece->data, dataS, 16 * sizeof( bool ) );
+            memcpy( newPiece->data, tetrominoeS, 64 * sizeof( bool ) );
+            memcpy( newPiece->dimensions, tetrominoeSDimensions, 16 * sizeof( int ) );
             newPiece->color = GREEN;
-            newPiece->width = 3;
-            newPiece->height = 2;
             break;
         case Z:
-            memcpy( newPiece->data, dataZ, 16 * sizeof( bool ) );
+            memcpy( newPiece->data, tetrominoeZ, 64 * sizeof( bool ) );
+            memcpy( newPiece->dimensions, tetrominoeZDimensions, 16 * sizeof( int ) );
             newPiece->color = RED;
-            newPiece->width = 3;
-            newPiece->height = 2;
             break;
         case T:
-            memcpy( newPiece->data, dataT, 16 * sizeof( bool ) );
+            memcpy( newPiece->data, tetrominoeT, 64 * sizeof( bool ) );
+            memcpy( newPiece->dimensions, tetrominoeTDimensions, 16 * sizeof( int ) );
             newPiece->color = PURPLE;
-            newPiece->width = 3;
-            newPiece->height = 2;
             break;
     }
 
@@ -368,7 +375,7 @@ void createRandomPiece( GameWorld *gw ) {
 
     int line = 0;
     int column = 0;
-    PieceType type = GetRandomValue( 0, 6 );
+    PieceType type = GetRandomValue( 1, 7 );
     //PieceType type = H;
 
     switch ( type ) {
@@ -401,7 +408,7 @@ void drawPiece( Piece *piece ) {
 
     for ( int i = 0; i < 4; i++ ) {
         for ( int j = 0; j < 4; j++ ) {
-            if ( piece->data[i][j] ) {
+            if ( piece->data[piece->currentFrame][i][j] ) {
                 DrawRectangle( 
                     (piece->column + j) * 40, 
                     (piece->line + i) * 40, 
@@ -413,16 +420,36 @@ void drawPiece( Piece *piece ) {
 
 }
 
+void turnPiece( Piece *piece ) {
+    piece->currentFrame++;
+    piece->currentFrame %= 4;
+}
+
 void checkPieceBoundaries( Piece *piece ) {
-    if ( piece->column + piece->width >= 10 ) piece->column = 10 - piece->width;
-    if ( piece->column < 0 ) piece->column = 0;
+
+    int columnOffset = piece->dimensions[piece->currentFrame][2];
+    int pieceColumn = piece->column + columnOffset;
+    int pieceWidth = piece->dimensions[piece->currentFrame][0];
+
+    if ( pieceColumn + pieceWidth >= 10 ) {
+        piece->column = 10 - pieceWidth - columnOffset;
+    }
+    if ( pieceColumn < 0 ) {
+        piece->column = 0 - columnOffset;
+    }
+
 }
 
 void stopWhenReachedBottom( Piece *piece ) {
-    if ( piece->line + piece->height >= 20 ) {
-        piece->line = 20 - piece->height;
+
+    int pieceLine = piece->line + piece->dimensions[piece->currentFrame][3];
+    int pieceHeight = piece->dimensions[piece->currentFrame][1];
+
+    if ( pieceLine + pieceHeight >= 20 ) {
+        pieceLine = 20 - pieceHeight;
         piece->stopped = true;
     }
+
 }
 
 void stopWhenCollide( Piece *piece, GameWorld *gw ) {
@@ -436,7 +463,7 @@ void stopWhenCollide( Piece *piece, GameWorld *gw ) {
         line = piece->line + i;
         for ( int j = 0; j < 4; j++ ) {
             column = piece->column + j;
-            if ( piece->data[i][j] && 
+            if ( piece->data[piece->currentFrame][i][j] && 
                  line >= 0 && line < 20 && 
                  column >= 0 && column < 10 &&
                  gw->board[line][column] != 0 ) {
@@ -464,7 +491,7 @@ void copyPieceToBoard( Piece *piece, GameWorld *gw ) {
         line = piece->line + i;
         for ( int j = 0; j < 4; j++ ) {
             column = piece->column + j;
-            if ( piece->data[i][j] && 
+            if ( piece->data[piece->currentFrame][i][j] && 
                  line >= 0 && line < 20 && 
                  column >= 0 && column < 10 ) {
                 gw->board[line][column] = piece->type;
@@ -592,12 +619,17 @@ void drawNextPieceBox( NextPieceBox *box ) {
     // draw piece (small)
     if ( piece != NULL ) {
 
-        int xStart = ( box->x + box->width / 2 ) - ( piece->width * tileLength ) / 2;
-        int yStart = ( box->y + box->height / 2 ) - ( piece->height * tileLength ) / 2;
+        int pieceWidth = piece->dimensions[piece->currentFrame][0];
+        int pieceHeight = piece->dimensions[piece->currentFrame][1];
+        int lineOffset = piece->dimensions[piece->currentFrame][3];
+        lineOffset = lineOffset > 0 ? lineOffset + 1 : lineOffset;
+
+        int xStart = ( box->x + box->width / 2 ) - ( pieceWidth * tileLength ) / 2;
+        int yStart = ( box->y + box->height / 2 ) - ( pieceHeight * tileLength ) / 2 - ( lineOffset * tileLength ) / 2;
 
         for ( int i = 0; i < 4; i++ ) {
             for ( int j = 0; j < 4; j++ ) {
-                if ( piece->data[i][j] ) {
+                if ( piece->data[piece->currentFrame][i][j] ) {
                     DrawRectangle( 
                         xStart + j * tileLength, 
                         yStart + i * tileLength, 
