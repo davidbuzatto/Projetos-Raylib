@@ -1,0 +1,10 @@
+https://github.com/raysan5/raylib/wiki/Working-on-Windows
+
+Ou então, se não quiser ler tudo:
+    Baixar: https://github.com/raysan5/raylib/archive/refs/heads/master.zip
+    Descompactar
+    Acessar via terminal: raylib/src/  (ou raylib-master/src)
+    Executar: mingw32-make PLATFORM=PLATFORM_DESKTOP
+    Aguardar o build (alguns warnings aparecerão)
+        Arquivos gerado da biblioteca (lib): raylib/src/libraylib.a
+        Arquivo de cabeçalho: raylib/src/raylib.h
