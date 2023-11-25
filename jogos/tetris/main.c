@@ -1,21 +1,18 @@
 /*******************************************************************************
  * Tetris game using Raylib (https://www.raylib.com/)
  * 
- * 
  * Author: Prof. Dr. David Buzatto
  ******************************************************************************/
 
 /**
  * TODO list:
- *     verify completed lines (sum to score);
- *     increase speed (time to time or based on score value?);
- *     collisions for left and right;
  *     pause screen;
  *         unpause;
  *         reset;
  *     start screen;
  *         play;
- *     modularize;
+ *     sounds;
+ *     modularize.
  */
 
 #include <stdio.h>
@@ -38,7 +35,9 @@
 
 // enums, structs, unions and custom types
 typedef enum {
-    H  = 1, // using values to make possible use 0 in board and get rid of compiler warnings
+    // using values to make possible use 0 in board
+    // and get rid of compiler warnings
+    H  = 1, 
     IL = 2,
     L  = 3,
     SQ = 4,
@@ -82,6 +81,14 @@ typedef struct {
     int y;
     int width;
     int height;
+    int level;
+} LevelBox;
+
+typedef struct {
+    int x;
+    int y;
+    int width;
+    int height;
     int lines;
 } LinesBox;
 
@@ -97,6 +104,7 @@ typedef struct {
     PieceType board[20][10]; // consolidated pieces positions
     Piece *currentPiece;
     ScoreBox *scoreBox;
+    LevelBox *levelBox;
     LinesBox *linesBox;
     NextPieceBox *nextPieceBox;
     GameState state;
@@ -104,6 +112,8 @@ typedef struct {
 
 // global variables
 const Color BACKGROUND_COLOR = { .r = 230, .g = 230, .b = 230, .a = 255 };
+int globalMaxCount = 60;
+int globalLastColumn = 0;
 
 // function prototypes
 void input( GameWorld *gw );
@@ -115,14 +125,15 @@ void createRandomPiece( GameWorld *gw );
 void updatePiece( Piece *piece );
 void drawPiece( Piece *piece );
 void turnPiece( Piece *piece );
-void checkPieceBoundaries( Piece *piece );
+void checkPieceBoundaries( Piece *piece, GameWorld *gw );
 void stopWhenReachedBottom( Piece *piece );
 void stopWhenCollide( Piece *piece, GameWorld *gw );
 void copyPieceToBoard( Piece *piece, GameWorld *gw );
 void processBoardToScore( GameWorld *gw );
 
-void drawScoreBox( ScoreBox *score );
-void drawLinesBox( LinesBox *score );
+void drawScoreBox( ScoreBox *scoreBox );
+void drawLevelBox( LevelBox *levelBox );
+void drawLinesBox( LinesBox *linesBox );
 void drawNextPieceBox( NextPieceBox *box );
 
 Color getColorByPieceType( PieceType type );
@@ -133,8 +144,6 @@ int main( void ) {
     const int screenWidth = 600;
     const int screenHeight = 800;
 
-    printf( "%d\n", tetrominoeH[0][0][0] );
-
     ScoreBox scoreBox = {
         .x = 420,
         .y = 20,
@@ -143,9 +152,17 @@ int main( void ) {
         .points = 0
     };
 
-    LinesBox linesBox = {
+    LevelBox levelBox = {
         .x = 420,
         .y = 120,
+        .width = 160,
+        .height = 60,
+        .level = 1
+    };
+
+    LinesBox linesBox = {
+        .x = 420,
+        .y = 220,
         .width = 160,
         .height = 60,
         .lines = 0
@@ -153,7 +170,7 @@ int main( void ) {
 
     NextPieceBox nextPieceBox = {
         .x = 420,
-        .y = 220,
+        .y = 320,
         .width = 160,
         .height = 90,
         .nextPiece = NULL
@@ -162,6 +179,7 @@ int main( void ) {
     GameWorld gw = { 
         .currentPiece = NULL,
         .scoreBox = &scoreBox,
+        .levelBox = &levelBox,
         .linesBox = &linesBox,
         .nextPieceBox = &nextPieceBox,
         .state = PLAYING
@@ -169,13 +187,16 @@ int main( void ) {
     memset( gw.board, 0, 200 * sizeof( int ) );
 
     // test
-    /*for ( int i = 17; i < 20; i++ ) {
-        gw.board[i][0] = 0;
-        gw.board[i][1] = 0;
-        gw.board[i][2] = 0;
-        gw.board[i][7] = 0;
-        gw.board[i][8] = 0;
-        gw.board[i][9] = 0;
+    /*for ( int i = 10; i < 20; i++ ) {
+        gw.board[i][0] = 1;
+        gw.board[i][1] = 1;
+        gw.board[i][2] = 1;
+        gw.board[i][3] = 1;
+        gw.board[i][4] = 1;
+        gw.board[i][6] = 1;
+        gw.board[i][7] = 1;
+        gw.board[i][8] = 1;
+        gw.board[i][9] = 1;
     }*/
 
     //createPiece( H, 0, 3, &gw );
@@ -231,8 +252,11 @@ void input( GameWorld *gw ) {
         }
 
         if ( IsKeyPressed( KEY_SPACE ) ) {
-            // TODO
-            printf( "go bottom\n" );
+            while ( !piece->stopped ) {
+                piece->line++;
+                stopWhenReachedBottom( piece );
+                stopWhenCollide( piece, gw );
+            }
         }
 
     }
@@ -246,7 +270,7 @@ void update( GameWorld *gw ) {
     if ( gw->state == PLAYING && piece != NULL ) {
 
         updatePiece( gw->currentPiece );
-        checkPieceBoundaries( piece );
+        checkPieceBoundaries( piece, gw );
         stopWhenReachedBottom( piece );
         stopWhenCollide( piece, gw );
 
@@ -267,6 +291,8 @@ void update( GameWorld *gw ) {
                 createRandomPiece( gw );
             }
 
+        } else {
+            globalLastColumn = piece->column;
         }
 
     }
@@ -287,7 +313,8 @@ void draw( GameWorld *gw ) {
                     j * 40, 
                     i * 40, 
                     40, 40, 
-                    gw->state == PLAYING ? getColorByPieceType( gw->board[i][j] ) : DARKGRAY );
+                    gw->state == PLAYING ? 
+                    getColorByPieceType( gw->board[i][j] ) : DARKGRAY );
             }
         }
     }
@@ -305,6 +332,7 @@ void draw( GameWorld *gw ) {
     }
 
     drawScoreBox( gw->scoreBox );
+    drawLevelBox( gw->levelBox );
     drawLinesBox( gw->linesBox );
     drawNextPieceBox( gw->nextPieceBox );
 
@@ -324,7 +352,7 @@ void createPiece( PieceType type, int line, int column, GameWorld *gw ) {
     newPiece->line = line;
     newPiece->column = column;
     newPiece->movementCount = 0;
-    newPiece->maxCount = 60;
+    newPiece->maxCount = globalMaxCount;
     newPiece->stopped = false;
     newPiece->type = type;
     newPiece->currentFrame = 0;
@@ -368,6 +396,7 @@ void createPiece( PieceType type, int line, int column, GameWorld *gw ) {
     }
 
     gw->nextPieceBox->nextPiece = newPiece;
+    globalLastColumn = newPiece->column;
 
 }
 
@@ -425,17 +454,47 @@ void turnPiece( Piece *piece ) {
     piece->currentFrame %= 4;
 }
 
-void checkPieceBoundaries( Piece *piece ) {
+void checkPieceBoundaries( Piece *piece, GameWorld *gw ) {
 
     int columnOffset = piece->dimensions[piece->currentFrame][2];
     int pieceColumn = piece->column + columnOffset;
     int pieceWidth = piece->dimensions[piece->currentFrame][0];
 
+    // with board boundaries
     if ( pieceColumn + pieceWidth >= 10 ) {
         piece->column = 10 - pieceWidth - columnOffset;
     }
     if ( pieceColumn < 0 ) {
         piece->column = 0 - columnOffset;
+    }
+
+    // with board filled squares
+    int line;
+    int column;
+    bool collide = false;
+
+    for ( int i = 0; i < 4; i++ ) {
+        line = piece->line + i;
+        for ( int j = 0; j < 4; j++ ) {
+            column = piece->column + j;
+            if ( piece->data[piece->currentFrame][i][j] && 
+                 line >= 0 && line < 20 && 
+                 column >= 0 && column < 10 &&
+                 gw->board[line][column] != 0 ) {
+                collide = true;
+            }
+        }
+    }
+
+    if ( collide ) {
+        //printf( "lastColumn %d | column %d\n", globalLastColumn, piece->column );
+        if ( globalLastColumn < piece->column ) {
+            // right collision
+            piece->column--;
+        } else if ( globalLastColumn > piece->column ) {
+            // left collision
+            piece->column++;
+        }
     }
 
 }
@@ -456,7 +515,7 @@ void stopWhenCollide( Piece *piece, GameWorld *gw ) {
 
     int line;
     int column;
-    bool colide = false;
+    bool collide = false;
     int maxLine = -1000;
 
     for ( int i = 0; i < 4; i++ ) {
@@ -467,7 +526,7 @@ void stopWhenCollide( Piece *piece, GameWorld *gw ) {
                  line >= 0 && line < 20 && 
                  column >= 0 && column < 10 &&
                  gw->board[line][column] != 0 ) {
-                colide = true;
+                collide = true;
                 if ( maxLine < piece->line ) {
                     maxLine = piece->line;
                 }
@@ -475,7 +534,7 @@ void stopWhenCollide( Piece *piece, GameWorld *gw ) {
         }
     }
 
-    if ( colide ) {
+    if ( collide ) {
         piece->line = maxLine - 1;
         piece->stopped = true;
     }
@@ -519,6 +578,8 @@ Color getColorByPieceType( PieceType type ) {
 void processBoardToScore( GameWorld *gw ) {
 
     bool remove;
+    bool removedLines[20] = { false };
+    int removedQuantity = 0;
 
     for ( int i = 0; i < 20; i++ ) {
         remove = true;
@@ -529,69 +590,134 @@ void processBoardToScore( GameWorld *gw ) {
             }
         }
         if ( remove ) {
+            removedQuantity++;
+            removedLines[i] = true;
             gw->scoreBox->points += 100;
             gw->linesBox->lines++;
+            if ( gw->linesBox->lines % 10 == 0 ) {
+                gw->levelBox->level++;
+                globalMaxCount = (int) (globalMaxCount * 0.75);
+                if ( globalMaxCount < 5 ) {
+                    globalMaxCount = 5;
+                }
+                gw->nextPieceBox->nextPiece->maxCount = globalMaxCount;
+            }
             for ( int j = 0; j < 10; j++ ) {
                 gw->board[i][j] = 0;
             }
         }
     }
 
+    int processedAmount = 0;
+    if ( removedQuantity > 0 ) {
+        for ( int i = 19; i >= 0; i-- ) {
+            if ( removedLines[i] ) {
+                // copy
+                for ( int j = i-1+processedAmount; j >= 0; j-- ) {
+                    for ( int k = 0; k < 10; k++ ) {
+                        gw->board[j+1][k] = gw->board[j][k];
+                    }
+                }
+                processedAmount++;
+            }
+        }
+    }
+
 }
 
-void drawScoreBox( ScoreBox *score ) {
+void drawScoreBox( ScoreBox *scoreBox ) {
 
     char scoreLabel[10] = "Score";
     int scoreLabelSize = 20;
 
     char scorePoints[9];
     int scorePointsSize = 30;
-    sprintf( scorePoints, "%08d", score->points );
+    sprintf( scorePoints, "%08d", scoreBox->points );
 
     Rectangle r = { 
-        .x = score->x, 
-        .y = score->y, 
-        .width = score->width, 
-        .height = score->height
+        .x = scoreBox->x, 
+        .y = scoreBox->y, 
+        .width = scoreBox->width, 
+        .height = scoreBox->height
     };
 
     DrawRectangleRoundedLines( r, 0.5, 1, 2, BLACK );
-    DrawRectangle( score->x + 25, score->y - 10, 
+    DrawRectangle( scoreBox->x + 25, scoreBox->y - 10, 
         MeasureText( scoreLabel, scoreLabelSize ) + 10, 
         20, BACKGROUND_COLOR );
 
     int w = MeasureText( scorePoints, scorePointsSize );
 
-    DrawText( scoreLabel, score->x + 30, score->y - 10, scoreLabelSize, BLACK );
-    DrawText( scorePoints, score->x + score->width / 2 - w / 2, score->y + 20, scorePointsSize, BLACK );
+    DrawText( scoreLabel, 
+              scoreBox->x + 30, scoreBox->y - 10, 
+              scoreLabelSize, BLACK );
+    DrawText( scorePoints, 
+              scoreBox->x + scoreBox->width / 2 - w / 2, scoreBox->y + 20, 
+              scorePointsSize, BLACK );
 
 }
 
-void drawLinesBox( LinesBox *lines ) {
+void drawLevelBox( LevelBox *levelBox ) {
+
+    char linesLabel[10] = "Level";
+    int linesLabelSize = 20;
+
+    char linesPoints[6];
+    int linesPointsSize = 30;
+    sprintf( linesPoints, "%03d", levelBox->level );
+
+    Rectangle r = { 
+        .x = levelBox->x, 
+        .y = levelBox->y, 
+        .width = levelBox->width, 
+        .height = levelBox->height
+    };
+
+    DrawRectangleRoundedLines( r, 0.5, 1, 2, BLACK );
+    DrawRectangle( levelBox->x + 25, levelBox->y - 10, 
+        MeasureText( linesLabel, linesLabelSize ) + 10, 
+        20, BACKGROUND_COLOR );
+
+    int w = MeasureText( linesPoints, linesPointsSize );
+
+    DrawText( linesLabel, 
+              levelBox->x + 30, levelBox->y - 10, 
+              linesLabelSize, BLACK );
+    DrawText( linesPoints, 
+              levelBox->x + levelBox->width / 2 - w / 2, levelBox->y + 20, 
+              linesPointsSize, BLACK );
+
+}
+
+void drawLinesBox( LinesBox *linesBox ) {
 
     char linesLabel[10] = "Lines";
     int linesLabelSize = 20;
 
     char linesPoints[6];
     int linesPointsSize = 30;
-    sprintf( linesPoints, "%05d", lines->lines );
+    sprintf( linesPoints, "%05d", linesBox->lines );
 
     Rectangle r = { 
-        .x = lines->x, 
-        .y = lines->y, 
-        .width = lines->width, 
-        .height = lines->height
+        .x = linesBox->x, 
+        .y = linesBox->y, 
+        .width = linesBox->width, 
+        .height = linesBox->height
     };
 
     DrawRectangleRoundedLines( r, 0.5, 1, 2, BLACK );
-    DrawRectangle( lines->x + 25, lines->y - 10, 
+    DrawRectangle( linesBox->x + 25, linesBox->y - 10, 
         MeasureText( linesLabel, linesLabelSize ) + 10, 
         20, BACKGROUND_COLOR );
 
     int w = MeasureText( linesPoints, linesPointsSize );
 
-    DrawText( linesLabel, lines->x + 30, lines->y - 10, linesLabelSize, BLACK );
-    DrawText( linesPoints, lines->x + lines->width / 2 - w / 2, lines->y + 20, linesPointsSize, BLACK );
+    DrawText( linesLabel, 
+              linesBox->x + 30, linesBox->y - 10, 
+              linesLabelSize, BLACK );
+    DrawText( linesPoints, 
+              linesBox->x + linesBox->width / 2 - w / 2, linesBox->y + 20, 
+              linesPointsSize, BLACK );
 
 }
 
@@ -614,7 +740,9 @@ void drawNextPieceBox( NextPieceBox *box ) {
         MeasureText( nextPieceLabel, nextPieceLabelSize ) + 10, 
         20, BACKGROUND_COLOR );
 
-    DrawText( nextPieceLabel, box->x + 30, box->y - 10, nextPieceLabelSize, BLACK );
+    DrawText( nextPieceLabel, 
+              box->x + 30, box->y - 10, 
+              nextPieceLabelSize, BLACK );
 
     // draw piece (small)
     if ( piece != NULL ) {
@@ -624,8 +752,11 @@ void drawNextPieceBox( NextPieceBox *box ) {
         int lineOffset = piece->dimensions[piece->currentFrame][3];
         lineOffset = lineOffset > 0 ? lineOffset + 1 : lineOffset;
 
-        int xStart = ( box->x + box->width / 2 ) - ( pieceWidth * tileLength ) / 2;
-        int yStart = ( box->y + box->height / 2 ) - ( pieceHeight * tileLength ) / 2 - ( lineOffset * tileLength ) / 2;
+        int xStart = ( box->x + box->width / 2 ) - 
+                     ( pieceWidth * tileLength ) / 2;
+        int yStart = ( box->y + box->height / 2 ) - 
+                     ( pieceHeight * tileLength ) / 2 - 
+                     ( lineOffset * tileLength ) / 2;
 
         for ( int i = 0; i < 4; i++ ) {
             for ( int j = 0; j < 4; j++ ) {
