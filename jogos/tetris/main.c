@@ -49,7 +49,7 @@ typedef enum {
 typedef enum {
     PLAYING,
     STOPPED,
-    LOSE
+    LOST
 } GameState;
 
 // Tetrominoe representation
@@ -277,7 +277,7 @@ void update( GameWorld *gw ) {
         // check if the player lost
         for ( int i = 0; i < 10; i++ ) {
             if ( gw->board[0][i] != 0 ) {
-                gw->state = LOSE;
+                gw->state = LOST;
                 break;
             }
         }
