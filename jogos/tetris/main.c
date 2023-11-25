@@ -361,12 +361,12 @@ void createPiece( PieceType type, int line, int column, GameWorld *gw ) {
         case H:
             memcpy( newPiece->data, tetrominoeH, 64 * sizeof( bool ) );
             memcpy( newPiece->dimensions, tetrominoeHDimensions, 16 * sizeof( int ) );
-            newPiece->color = BLUE;
+            newPiece->color = SKYBLUE;
             break;
         case IL:
             memcpy( newPiece->data, tetrominoeIL, 64 * sizeof( bool ) );
             memcpy( newPiece->dimensions, tetrominoeILDimensions, 16 * sizeof( int ) );
-            newPiece->color = DARKBLUE;
+            newPiece->color = BLUE;
             break;
         case L:
             memcpy( newPiece->data, tetrominoeL, 64 * sizeof( bool ) );
@@ -563,8 +563,8 @@ void copyPieceToBoard( Piece *piece, GameWorld *gw ) {
 Color getColorByPieceType( PieceType type ) {
     
     switch ( type ) {
-        case H: return BLUE;
-        case IL: return DARKBLUE;
+        case H: return SKYBLUE;
+        case IL: return BLUE;
         case L: return ORANGE;
         case SQ: return YELLOW;
         case S: return GREEN;
