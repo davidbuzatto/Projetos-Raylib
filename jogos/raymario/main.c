@@ -14,9 +14,7 @@
 #include <time.h>
 #include "include/raylib.h"
 
-#include "base.h"
-#include "stage.h"
-#include "player.h"
+#include "main.h"
 
 // macros
 
@@ -44,11 +42,11 @@ int main( void ) {
     Player player = {
         .data = { 
             .x = 100, 
-            .y = 100, 
+            .y = 330, 
             .width = 100, 
             .height = 100, 
             .vx = 0,
-            .vy = 5,
+            .vy = 0,
             .baseColor = BLUE
         },
         .state = PLAYER_STATE_ON_GROUND
@@ -64,7 +62,7 @@ int main( void ) {
         }
     };
     parseTerrain( &stage, "                    \n"
-                          "                    \n"
+                          "         %%%%%%%%%% \n"
                           "                    \n"
                           "                    \n"
                           "                    \n"

@@ -22,6 +22,6 @@ typedef struct {
 void inputPlayer( Player *player, Stage *stage );
 void updatePlayer( Player *player, Stage *stage );
 void drawPlayer( Player *player );
-CollisionResult interceptsPlayer( Player *player, SpriteData *spriteData );
+CollisionType interceptsPlayer( Player *player, SpriteData *spriteData );
 
 #endif // PLAYER_H

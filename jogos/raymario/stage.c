@@ -6,9 +6,7 @@
 #include <time.h>
 #include "include/raylib.h"
 
-#include "base.h"
-#include "stage.h"
-#include "tile.h"
+#include "main.h"
 
 void updateStage( Stage *stage ) {
 
@@ -75,5 +73,25 @@ void parseTerrain( Stage *stage, const char* terrainData ) {
         current++;
 
     }
+
+}
+
+TileCollision interceptsStage( Stage *stage, Player *player ) {
+
+    TileCollision r = {
+        .tile = NULL,
+        .type = COLLISION_NONE
+    };
+
+    for ( int i = 0; i < 15; i++ ) {
+        for ( int j = 0; j < 20; j++ ) {
+            r = interceptsTyle( &stage->terrain[i][j], player );
+            if ( r.type != COLLISION_NONE ) {
+                return r;
+            }
+        }
+    }
+
+    return r;
 
 }

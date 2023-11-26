@@ -11,7 +11,7 @@ typedef enum {
     COLLISION_RIGHT,
     COLLISION_TOP,
     COLLISION_BOTTOM
-} CollisionResult;
+} CollisionType;
 
 typedef struct {
     double x;
