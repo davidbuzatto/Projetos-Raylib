@@ -8,19 +8,17 @@
 
 #include "main.h"
 
-void updateStage( Stage *stage ) {
+void inputAndUpdateStage( Stage *stage ) {
 
-    // slide right or left
-    // paralax
 
 }
 
 void drawStage( Stage *stage ) {
 
-    SpriteData *data = &stage->data;
+    DrawRectangle( 0, 0, STAGE_WIDTH * TILE_WIDTH, STAGE_HEIGHT * TILE_WIDTH, stage->data.baseColor );
 
-    for ( int i = 0; i < 15; i++ ) {
-        for ( int j = 0; j < 20; j++ ) {
+    for ( int i = 0; i < STAGE_HEIGHT; i++ ) {
+        for ( int j = 0; j < STAGE_WIDTH; j++ ) {
             drawTile( &stage->terrain[i][j] );
         }
     }
@@ -60,8 +58,9 @@ void parseTerrain( Stage *stage, const char* terrainData ) {
             case ' ': 
                 t->data.x = j * TILE_WIDTH;
                 t->data.y = i * TILE_WIDTH;
+                t->data.baseColor = GREEN;
                 t->collideable = false;
-                t->visible = false;
+                t->visible = true;
                 j++;
                 break;
             case '\n': 
@@ -80,13 +79,13 @@ TileCollision interceptsStage( Stage *stage, Player *player ) {
 
     TileCollision r = {
         .tile = NULL,
-        .type = COLLISION_NONE
+        .type = COLLISION_TYPE_NONE
     };
 
-    for ( int i = 0; i < 15; i++ ) {
-        for ( int j = 0; j < 20; j++ ) {
+    for ( int i = 0; i < STAGE_HEIGHT; i++ ) {
+        for ( int j = 0; j < STAGE_WIDTH; j++ ) {
             r = interceptsTyle( &stage->terrain[i][j], player );
-            if ( r.type != COLLISION_NONE ) {
+            if ( r.type != COLLISION_TYPE_NONE ) {
                 return r;
             }
         }

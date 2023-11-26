@@ -8,7 +8,7 @@
 
 #include "main.h"
 
-void inputPlayer( Player *player, Stage *stage ) {
+void inputAndUpdatePlayer( Player *player, Stage *stage ) {
 
     SpriteData *playerD = &player->data;
 
@@ -24,20 +24,13 @@ void inputPlayer( Player *player, Stage *stage ) {
     } else if ( IsKeyDown( KEY_LEFT ) ) {
         playerD->vx = -PLAYER_BASE_WALK_SPEED;
     } else if ( IsKeyDown( KEY_DOWN ) ) {
-        playerD->vy = PLAYER_BASE_WALK_SPEED;
+        //playerD->vy = PLAYER_BASE_WALK_SPEED;
     } else if ( IsKeyDown( KEY_UP ) ) {
-        playerD->vy = -PLAYER_BASE_WALK_SPEED;
+        //playerD->vy = -PLAYER_BASE_WALK_SPEED;
     } else {
         playerD->vx = 0;
-        playerD->vy = 0;
+        //playerD->vy = 0;
     }
-
-}
-
-void updatePlayer( Player *player, Stage *stage ) {
-
-    SpriteData *playerD = &player->data;
-    SpriteData *stageD = &stage->data;
 
     playerD->x += playerD->vx;
     playerD->y += playerD->vy;
@@ -46,44 +39,43 @@ void updatePlayer( Player *player, Stage *stage ) {
     Tile *tile = tc.tile;
 
     switch ( tc.type ) {
-        case COLLISION_LEFT:
-            playerD->x = tile->data.x - playerD->width;
-            printf( "left\n" );
+        case COLLISION_TYPE_LEFT:
+            playerD->x = tile->data.x - playerD->width - 1;
+            //printf( "left\n" );
             break;
-        case COLLISION_RIGHT:
-            playerD->x = tile->data.x + tile->data.width;
-            printf( "right\n" );
+        case COLLISION_TYPE_RIGHT:
+            playerD->x = tile->data.x + tile->data.width + 1;
+            //printf( "right\n" );
             break;
-        case COLLISION_TOP:
-            playerD->y = tile->data.y - playerD->height;
-            printf( "top\n" );
+        case COLLISION_TYPE_TOP:
+            playerD->y = tile->data.y - playerD->height - 1;
+            playerD->vy = 0;
+            player->state = PLAYER_STATE_ON_GROUND;
+            //printf( "top\n" );
             break;
-        case COLLISION_BOTTOM:
-            playerD->y = tile->data.y + tile->data.height;
-            printf( "bottom\n" );
+        case COLLISION_TYPE_BOTTOM:
+            playerD->y = tile->data.y + tile->data.height + 1;
+            playerD->vy = 5;
+            //printf( "bottom\n" );
+            break;
+        default: 
             break;
     }
 
-    /*if ( playerD->y + playerD->height >= stageD->y ) {
-        playerD->y = stageD->y - playerD->height;
-        playerD->vy = 0;
-        player->state = PLAYER_STATE_ON_GROUND;
-    }*/
-
-    //playerD->vy += GLOBAL_GRAVITY;
+    playerD->vy += GLOBAL_GRAVITY;
 
 }
 
 void drawPlayer( Player *player ) {
 
-    SpriteData *data = &(player->data);
+    SpriteData *data = &player->data;
 
     DrawRectangle( (int) data->x, (int) data->y,
-        (int) data->width, (int) data->height, 
-        data->baseColor );
+                   (int) data->width, (int) data->height, 
+                   data->baseColor );
 
 }
 
 CollisionType interceptsPlayer( Player *player, SpriteData *spriteData ) {
-    return COLLISION_NONE;
+    return COLLISION_TYPE_NONE;
 }

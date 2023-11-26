@@ -23,14 +23,14 @@
 typedef struct {
     Player *player;
     Stage *stage;
+    Camera2D *camera;
 } GameWorld;
 
 // global variables
 
 
 // function prototypes
-void input( GameWorld *gw );
-void update( GameWorld *gw );
+void inputAndUpdate( GameWorld *gw );
 void draw( GameWorld *gw );
 
 int main( void ) {
@@ -43,8 +43,8 @@ int main( void ) {
         .data = { 
             .x = 100, 
             .y = 330, 
-            .width = 100, 
-            .height = 100, 
+            .width = 50, 
+            .height = 50, 
             .vx = 0,
             .vy = 0,
             .baseColor = BLUE
@@ -58,38 +58,45 @@ int main( void ) {
             .y = 500, 
             .width = 800, 
             .height = 50, 
-            .baseColor = GRAY
+            .baseColor = BLACK
         }
     };
-    parseTerrain( &stage, "                    \n"
-                          "         %%%%%%%%%% \n"
-                          "                    \n"
-                          "                    \n"
-                          "                    \n"
-                          "                    \n"
-                          "                    \n"
-                          "                    \n"
-                          "                    \n"
-                          "#                   \n"
-                          "#             %%%   \n"
-                          "##                  \n"
-                          "##          %%%%    \n"
-                          "#####               \n"
-                          "####################" );
+
+    parseTerrain( &stage, "#                                                #\n"
+                          "#        %%%%%%%%%%                              #\n"
+                          "#                                                #\n"
+                          "#                                                #\n"
+                          "#                                                #\n"
+                          "#                                                #\n"
+                          "#                                                #\n"
+                          "#             %%%%                               #\n"
+                          "#                                                #\n"
+                          "#                                                #\n"
+                          "##          %%%%%%%%                             #\n"
+                          "##                                               #\n"
+                          "#####                     ################       #\n"
+                          "##################################################\n"
+                          "##################################################" );
+
+    Camera2D camera = { 0 };
+    camera.target = (Vector2){ player.data.x, player.data.y - 150 };
+    camera.offset = (Vector2){ screenWidth/2.0f, screenHeight/2.0f };
+    camera.rotation = 0.0f;
+    camera.zoom = 1.0f;
 
     GameWorld gw = {
         .player = &player,
-        .stage = &stage
+        .stage = &stage,
+        .camera = &camera
     };
 
-    SetConfigFlags( FLAG_MSAA_4X_HINT ); // turn antialiasing on (if possible)
+    SetConfigFlags( FLAG_MSAA_4X_HINT );
     InitWindow( screenWidth, screenHeight, "RayMario");
     //InitAudioDevice();
     SetTargetFPS( 60 );    
 
     while ( !WindowShouldClose() ) {
-        input( &gw );
-        update( &gw );
+        inputAndUpdate( &gw );
         draw( &gw );
     }
 
@@ -99,22 +106,21 @@ int main( void ) {
 
 }
 
-void input( GameWorld *gw ) {
-    inputPlayer( gw->player, gw->stage );
-}
-
-void update( GameWorld *gw ) {
-    updateStage( gw->stage );
-    updatePlayer( gw->player, gw->stage );
+void inputAndUpdate( GameWorld *gw ) {
+    inputAndUpdatePlayer( gw->player, gw->stage );
+    inputAndUpdateStage( gw->stage );
+    gw->camera->target = (Vector2){ gw->player->data.x, gw->player->data.y - 150 };
 }
 
 void draw( GameWorld *gw ) {
 
     BeginDrawing();
-    ClearBackground( RAYWHITE );
+    ClearBackground( gw->stage->data.baseColor );
 
+    BeginMode2D( *(gw->camera) );
     drawStage( gw->stage );
     drawPlayer( gw->player );
+    EndMode2D();
 
     EndDrawing();
 
