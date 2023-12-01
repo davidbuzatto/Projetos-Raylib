@@ -41,7 +41,7 @@ int main( void ) {
     };
 
     SetConfigFlags( FLAG_MSAA_4X_HINT ); // turn antialiasing on (if possible)
-    InitWindow( screenWidth, screenHeight, "Window Title");
+    InitWindow( screenWidth, screenHeight, "Window Title" );
     InitAudioDevice();
     SetTargetFPS( 60 );    
 
