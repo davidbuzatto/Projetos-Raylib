@@ -13,6 +13,11 @@
 #include "include/raylib.h"
 #include "include/raymath.h"
 
+static const double GRAVITY = .1;
+static const double PLAYER_BASE_WALK_SPEED = 5;
+static const double PLAYER_BASE_JUMP_SPEED = -4;
+static const double TILE_WIDTH = 32;
+
 typedef enum CollisionType {
     COLLISION_TYPE_NONE,
     COLLISION_TYPE_LEFT,
@@ -20,6 +25,14 @@ typedef enum CollisionType {
     COLLISION_TYPE_TOP,
     COLLISION_TYPE_BOTTOM
 } CollisionType;
+
+typedef enum PlayerState {
+    PLAYER_STATE_IDLE,
+    PLAYER_STATE_WALKING,
+    PLAYER_STATE_JUMPING,
+    PLAYER_STATE_DOWN,
+    PLAYER_STATE_DYING
+} PlayerState;
 
 typedef struct Sprite {
     Rectangle rect;
@@ -29,6 +42,7 @@ typedef struct Sprite {
 
 typedef struct Player {
     Sprite sp;
+    PlayerState state;
     int bbLength;
     Rectangle bbLeft;
     Rectangle bbRight;
@@ -48,7 +62,6 @@ typedef struct TileMap {
 
 typedef struct {
     Player *player;
-    Tile *tile;
     TileMap *tileMap;
 } GameWorld;
 
@@ -57,7 +70,8 @@ void draw( GameWorld *gw );
 
 void updatePlayerBoundingBoxes( Player *player );
 CollisionType checkCollisionPlayerVsTile( Player *player, Tile *tile );
-void resolveCollisionPlayerVsTile( Player *player, Tile *tile );
+void resolveCollisionPlayerVsTile( Player *player, Tile *tile, CollisionType collisionType );
+void resolveCollisionPlayerVsTileMap( Player *player, TileMap *tileMap );
 
 TileMap *newTileMap( char *mapData );
 void freeTileMap( TileMap *tileMap );
@@ -69,20 +83,21 @@ void drawTileMap( TileMap *tileMap );
 int main( void ) {
 
     // initialization
-    const int screenWidth = 800;
-    const int screenHeight = 480;
+    const int screenWidth = 1408;
+    const int screenHeight = 640;
 
     Player player = {
         .sp = {
             .rect = {
                 .x = 100,
-                .y = 100,
+                .y = 400,
                 .width = 28,
                 .height = 40
             },
             .vel = {0},
             .color = BLUE
         },
+        .state = PLAYER_STATE_IDLE,
         .bbLength = 5,
         .bbLeft = {0},
         .bbRight = {0},
@@ -90,40 +105,54 @@ int main( void ) {
         .bbBottom = {0}
     };
 
-    Tile tile = {
-        .sp = {
-            .rect = {
-                .x = 200,
-                .y = 100,
-                .width = 32,
-                .height = 32
-            },
-            .vel = {0},
-            .color = BLACK
-        }
-    };
-
     TileMap *tileMap = newTileMap( 
-        "#            $$$$$$$    #\n"
-        "#                       #\n"
-        "#                       #\n"
-        "#       $$$$$$$         #\n"
-        "#                       #\n"
-        "#                       #\n"
-        "#                 %%%%% #\n"
-        "#                       #\n"
-        "#                       #\n"
-        "#              %%%      #\n"
-        "#                       #\n"
-        "#                       #\n"
-        "#           ###         #\n"
-        "#         #######       #\n"
-        "#########################"
+        "u\n"
+        "F\n"
+        "D\n"
+        "D        K    K\n"
+        "D      KKKKKKKK                                                                                                                                     2                      K          KKKKKKKKKKKKKKKK                   *\n"
+        "D                        KKKKKKKK                                                                                                                                                                   KKKKKKKK\n"
+        "D                               KKKKKK                                                                                                                                                                    KKKKKKKKKK\n"
+        "D                                    KKKKKKK                                                                                                                   IIII                                       KKKKKKKKKKEBBBBBBBB\n"
+        "D                                          KKKKKKK                             o o o o o o o                                                                                         8                              CAAAAAAAA\n"
+        "D                                                                                                          ST                                                                    8                                  CAAAAAAAA\n"
+        "D                                           o o o o o o o    3                    5      5                YQRST                                      UV                       8                                     CAAAAAAAA\n"
+        "D                                   IIIIIIIIIIIIIIIIIIIIIIIIIIII        KKKKKKKKKKKKKKKKKKKKKKKKKKK       ZQRQR    1   1                             WX                    8                                        CAAAAAAAA\n"
+        "D                               IIIIIIII                                          o            KKKKKKKKKKKKKKKKKKKKKKKKKKKKK                      1  WX                                                   ST o o o oCAAAAAAAA\n"
+        "D                          IIIIIIII                                              o o                                                           EBBBBBBBBBBF                                               QRSTo o o CAAAAAAAA\n"
+        "D        IIIIIIIIIIIIIIIIIIIIIII                     OP                         o o o                                2                      o  CAAAAAAAAAAD                                              YQRQR o o oCAAAAAAAA\n"
+        "D                                                    MNOP                        o o                              o o o o                  o o CAAAAAAAAAAHBBBBBF                                        ZQRQRY o o CAAAAAAAA\n"
+        "D      I                            o o o            MNMN                         o                                                      EBBBBBGAAAAAAAAAAAAAAAAHBBBBBBF                                 ZQRQRZY o oCAAAAAAAA\n"
+        "D            1        1            o o o o           MNMN                    4       4       4       4                                   CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBF         3    4    5    6      ZQRQRZZo o CAAAAAAAA\n"
+        "HBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBGAAAAAAAA\n"
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
     );
+
+    /*TileMap *tileMap = newTileMap( 
+        "u\n"
+        "F\n"
+        "D\n"
+        "D        K    K\n"
+        "D                        KKKKKKKK                                                                                                                                     2                      K          KKKKKKKKKKKKKKKK                   *\n"
+        "D                                          KKKKKKKK                                                                                                                                                                   KKKKKKKK\n"
+        "D                                                 KKKKKK                                                                                                                                                                    KKKKKKKKKK\n"
+        "D                                                      KKKKKKK                                                                                                                   IIII                                       KKKKKKKKKKEBBBBBBBB\n"
+        "D                                                            KKKKKKK                             o o o o o o o                                                                                         8                              CAAAAAAAA\n"
+        "D                                                                                                                            ST                                                                    8                                  CAAAAAAAA\n"
+        "D                                                             o o o o o o o    3                    5      5                YQRST                                      UV                       8                                     CAAAAAAAA\n"
+        "D                                                     IIIIIIIIIIIIIIIIIIIIIIIIIIII        KKKKKKKKKKKKKKKKKKKKKKKKKKK       ZQRQR    1   1                             WX                    8                                        CAAAAAAAA\n"
+        "D                                                 IIIIIIII                                          o            KKKKKKKKKKKKKKKKKKKKKKKKKKKKK                      1  WX                                                   ST o o o oCAAAAAAAA\n"
+        "D                                            IIIIIIII                                              o o                                                           EBBBBBBBBBBF                                               QRSTo o o CAAAAAAAA\n"
+        "D                          IIIIIIIIIIIIIIIIIIIIIII                     OP                         o o o                                2                      o  CAAAAAAAAAAD                                              YQRQR o o oCAAAAAAAA\n"
+        "D                                                                      MNOP                        o o                              o o o o                  o o CAAAAAAAAAAHBBBBBF                                        ZQRQRY o o CAAAAAAAA\n"
+        "D                                                     o o o            MNMN                         o                                                      EBBBBBGAAAAAAAAAAAAAAAAHBBBBBBF                                 ZQRQRZY o oCAAAAAAAA\n"
+        "D          o o o o             1        1            o o o o           MNMN                    4       4       4       4                                   CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBF         3    4    5    6      ZQRQRZZo o CAAAAAAAA\n"
+        "HBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBGAAAAAAAA\n"
+        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    );*/
 
     GameWorld gw = {
         .player = &player,
-        .tile = &tile,
         .tileMap = tileMap
     };
 
@@ -146,29 +175,46 @@ int main( void ) {
 void inputAndUpdate( GameWorld *gw ) {
 
     Player *player = gw->player;
-    Tile *tile = gw->tile;
+
+    if ( IsKeyPressed( KEY_Q ) ) {
+        player->sp.rect.x = 100;
+        player->sp.rect.x = 400;
+        player->sp.vel = (Vector2){0};
+    }
+    
+    if ( IsKeyPressed( KEY_SPACE ) && 
+         ( player->state == PLAYER_STATE_IDLE || 
+           player->state == PLAYER_STATE_WALKING ) ) {
+        player->sp.vel.y = PLAYER_BASE_JUMP_SPEED;
+        player->state = PLAYER_STATE_JUMPING;
+    }
 
     if ( IsKeyDown( KEY_LEFT ) ) {
-        player->sp.vel.x = -5;
+        player->sp.vel.x = -PLAYER_BASE_WALK_SPEED;
+        player->state = PLAYER_STATE_WALKING;
     } else if ( IsKeyDown( KEY_RIGHT ) ) {
-        player->sp.vel.x = 5;
+        player->sp.vel.x = PLAYER_BASE_WALK_SPEED;
+        player->state = PLAYER_STATE_WALKING;
     } else {
         player->sp.vel.x = 0;
+        player->state = PLAYER_STATE_IDLE;
     }
 
-    if ( IsKeyDown( KEY_UP ) ) {
-        player->sp.vel.y = -5;
+    /*if ( IsKeyDown( KEY_UP ) ) {
+        player->sp.vel.y = -PLAYER_BASE_WALK_SPEED;
     } else if ( IsKeyDown( KEY_DOWN ) ) {
-        player->sp.vel.y = 5;
+        player->sp.vel.y = PLAYER_BASE_WALK_SPEED;
     } else {
         player->sp.vel.y = 0;
-    }
+    }*/
 
+    player->sp.vel.y += GRAVITY;
+    
     player->sp.rect.x += player->sp.vel.x;
     player->sp.rect.y += player->sp.vel.y;
 
     updatePlayerBoundingBoxes( player );
-    resolveCollisionPlayerVsTile( player, tile );
+    resolveCollisionPlayerVsTileMap( player, gw->tileMap );
 
 }
 
@@ -178,7 +224,6 @@ void draw( GameWorld *gw ) {
     ClearBackground( WHITE );
 
     drawTileMap( gw->tileMap );
-    drawTile( gw->tile );
     drawPlayer( gw->player );
 
     EndDrawing();
@@ -237,9 +282,9 @@ CollisionType checkCollisionPlayerVsTile( Player *player, Tile *tile ) {
 
 }
 
-void resolveCollisionPlayerVsTile( Player *player, Tile *tile ) {
+void resolveCollisionPlayerVsTile( Player *player, Tile *tile, CollisionType collisionType ) {
 
-    switch ( checkCollisionPlayerVsTile( player, tile ) ) {
+    switch ( collisionType ) {
         case COLLISION_TYPE_LEFT:
             player->sp.rect.x = tile->sp.rect.x + tile->sp.rect.width;
             break;
@@ -248,13 +293,35 @@ void resolveCollisionPlayerVsTile( Player *player, Tile *tile ) {
             break;
         case COLLISION_TYPE_TOP:
             player->sp.rect.y = tile->sp.rect.y + tile->sp.rect.height;
+            player->sp.vel.y = 0;
             break;
         case COLLISION_TYPE_BOTTOM:
             player->sp.rect.y = tile->sp.rect.y - player->sp.rect.height;
+            player->sp.vel.y = 0;
+            player->state = PLAYER_STATE_IDLE;
             break;
     }
 
-    updatePlayerBoundingBoxes( player );
+    if ( collisionType != COLLISION_TYPE_NONE ) {
+        updatePlayerBoundingBoxes( player );
+    }
+
+}
+
+void resolveCollisionPlayerVsTileMap( Player *player, TileMap *tileMap ) {
+
+    for ( int i = 0; i < tileMap->rows; i++ ) {
+        for ( int j = 0; j < tileMap->columns; j++ ) {
+            Tile *tile = &tileMap->tiles[i*tileMap->columns+j];
+            if ( tile != NULL ) {
+                CollisionType collisionType = checkCollisionPlayerVsTile( 
+                    player, tile );
+                if ( collisionType != COLLISION_TYPE_NONE ) {
+                    resolveCollisionPlayerVsTile( player, tile, collisionType );                    
+                }
+            }
+        }
+    }
 
 }
 
@@ -317,10 +384,10 @@ TileMap *newTileMap( char *mapData ) {
                 tiles[i*tileMap->columns+j] = (Tile){
                     .sp = {
                         .rect = {
-                            .x = j * 32,
-                            .y = i * 32,
-                            .width = 32,
-                            .height = 32
+                            .x = j * TILE_WIDTH,
+                            .y = i * TILE_WIDTH,
+                            .width = TILE_WIDTH,
+                            .height = TILE_WIDTH
                         },
                         .vel = {0},
                         .color = color
