@@ -4,20 +4,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdarg.h>
 #include <math.h>
 #include <string.h>
 #include <time.h>
 #include "include/raylib.h"
 #include "include/raymath.h"
 
-static const double GRAVITY = .3;
-static const double PLAYER_BASE_WALK_SPEED = 5;
-static const double PLAYER_BASE_JUMP_SPEED = -6;
-static const double MAX_FALLING_SPEED = 5;
 static const double TILE_WIDTH = 32;
-
-static Texture2D TILE_TEXTURE_CACHE[26];
-static Texture2D CURRENT_BACKGROUND;
 
 typedef enum CollisionType {
     COLLISION_TYPE_NONE,
@@ -41,6 +35,14 @@ typedef enum LookingDirection {
     LOOKING_TO_THE_RIGHT = 1
 } LookingDirection;
 
+typedef struct Animation {
+    int counter;
+    int maxCounter;
+    int currentFrame;
+    int frameQuantity;
+    Texture2D *frameTextures;
+} Animation;
+
 typedef struct Sprite {
     Rectangle rect;
     Vector2 vel;
@@ -54,10 +56,16 @@ typedef struct Player {
 
     bool jumping;
     bool onGround;
+
     int walkingCounter;
     int currentWalkingFrame;
     int maxWalkingFrame;
     Texture2D walkingTextureFrame[4];
+
+    // not used yet
+    Animation walkingAnimationL;
+    Animation walkingAnimationR;
+
     Texture2D jumpingTextureFrame[4];
     LookingDirection lookingDirection;
 
@@ -101,15 +109,21 @@ void resolveCollisionPlayerVsTileMap( Player *player, TileMap *tileMap );
 void drawPlayer( Player *player );
 void loadPlayerTextureCaches( Player *player );
 void unloadPlayerTextureCaches( void );
+void createPlayerWalkingAnimation( Player* player );
 
 // tile_map.c
 TileMap *newTileMap( char *mapData );
 void freeTileMap( TileMap *tileMap );
 void drawTile( Tile *tile );
-void drawTileMap( TileMap *tileMap );
+void drawTileMap( TileMap *tileMap, Player *player );
 void loadTileTextureCache( void );
 void unloadTileTextureCache( void );
 void loadBackground( void );
 void unloadBackground( void );
+
+// animation.c
+Animation createAnimation( int maxCounter, int frameQuantity );
+void setAnimationTextures( Animation *animation, ... );
+Animation freeAnimationDyn( Animation *animation );
 
 #endif // MAIN_H

@@ -1,6 +1,6 @@
 /*******************************************************************************
- * Mais uma tentativa de implementação de detecção de colisão.
- * 
+ * Por do jogo JMario para Raylib.
+  * 
  * Author: Prof. Dr. David Buzatto
  ******************************************************************************/
 
@@ -15,11 +15,17 @@
 
 #include "main.h"
 
+const double GRAVITY = .3;
+const double PLAYER_BASE_WALK_SPEED = 5;
+const double PLAYER_BASE_RUNNING_SPEED = 3;
+const double PLAYER_BASE_JUMP_SPEED = -6;
+const double MAX_FALLING_SPEED = 5;
+
 int main( void ) {
 
     // initialization
     const int screenWidth = 800;
-    const int screenHeight = 640;
+    const int screenHeight = 600;
 
     Player player = {
         .sp = {
@@ -68,6 +74,8 @@ int main( void ) {
     loadBackground();
     SetTargetFPS( 60 );
 
+    //createPlayerWalkingAnimation( &player );
+
     while ( !WindowShouldClose() ) {
         inputAndUpdate( &gw );
         draw( &gw );
@@ -97,7 +105,7 @@ void inputAndUpdate( GameWorld *gw ) {
     int currentWalkSpeed = PLAYER_BASE_WALK_SPEED;
 
     if ( IsKeyDown( KEY_LEFT_CONTROL ) ) {
-        currentWalkSpeed += 3;
+        currentWalkSpeed += PLAYER_BASE_RUNNING_SPEED;
     }
 
     if ( IsKeyPressed( KEY_SPACE ) && player->onGround ) {
@@ -148,7 +156,7 @@ void draw( GameWorld *gw ) {
     ClearBackground( (Color){ .r = 0, .g = 80, .b = 144, .a = 255 } );
 
     BeginMode2D( *(gw->camera) );
-    drawTileMap( gw->tileMap );
+    drawTileMap( gw->tileMap, gw->player );
     drawPlayer( gw->player );
     EndMode2D();
 

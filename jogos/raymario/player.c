@@ -9,8 +9,13 @@
 
 #include "main.h"
 
-Texture2D PLAYER_WALKING_TEXTURE_CACHE[4];
-Texture2D PLAYER_JUMPING_TEXTURE_CACHE[4];
+Texture2D playerWalkingTextureCache[4];
+Texture2D playerJumpingTextureCache[4];
+
+Image imgMario1;
+Image imgMario2;
+Image imgMarioJump1;
+Image imgMarioJump2;
 
 void updatePlayerBoundingBoxes( Player *player ) {
 
@@ -97,8 +102,26 @@ void resolveCollisionPlayerVsTile( Player *player, Tile *tile, CollisionType col
 
 void resolveCollisionPlayerVsTileMap( Player *player, TileMap *tileMap ) {
 
-    for ( int i = 0; i < tileMap->rows; i++ ) {
-        for ( int j = 0; j < tileMap->columns; j++ ) {
+    int cp = player->sp.rect.x / TILE_WIDTH;
+    int lp = player->sp.rect.y / TILE_WIDTH;
+
+    int left = 3;
+    int right = 3;
+    int top = 3;
+    int bottom = 3;
+
+    int iStart = lp - top;
+    iStart = iStart < 0 ? 0 : iStart;
+    int iEnd = lp + bottom;
+    iEnd = iEnd >= tileMap->rows ? tileMap->rows : iEnd;
+
+    int jStart = cp - left;
+    jStart = jStart < 0 ? 0 : jStart;
+    int jEnd = cp + right;
+    jEnd = jEnd >= tileMap->columns ? tileMap->columns : jEnd;
+
+    for ( int i = iStart; i < iEnd; i++ ) {
+        for ( int j = jStart; j < jEnd; j++ ) {
             Tile *tile = &tileMap->tiles[i*tileMap->columns+j];
             if ( tile != NULL && tile->collideable ) {
                 CollisionType collisionType = checkCollisionPlayerVsTile( 
@@ -157,7 +180,7 @@ void drawPlayer( Player *player ) {
 
     } else if ( player->jumping ) {
 
-        // 0: goind up, 1: going down
+        // 0: going up, 1: going down
         int frame = player->sp.vel.y < 0 ? 0 : 1;
 
         if ( player->lookingDirection == LOOKING_TO_THE_LEFT ) {
@@ -183,35 +206,69 @@ void drawPlayer( Player *player ) {
 
 void loadPlayerTextureCaches( Player *player ) {
 
-    PLAYER_WALKING_TEXTURE_CACHE[0] = LoadTexture( "resources/images/sprites/mario1L.png" );
-    PLAYER_WALKING_TEXTURE_CACHE[1] = LoadTexture( "resources/images/sprites/mario2L.png" );
-    PLAYER_WALKING_TEXTURE_CACHE[2] = LoadTexture( "resources/images/sprites/mario1R.png" );
-    PLAYER_WALKING_TEXTURE_CACHE[3] = LoadTexture( "resources/images/sprites/mario2R.png" );
+    imgMario1 = LoadImage( "resources/images/sprites/mario1L.png" );
+    imgMario2 = LoadImage( "resources/images/sprites/mario2L.png" );
+    imgMarioJump1 = LoadImage( "resources/images/sprites/marioJump1L.png" );
+    imgMarioJump2 = LoadImage( "resources/images/sprites/marioJump2L.png" );
 
-    PLAYER_JUMPING_TEXTURE_CACHE[0] = LoadTexture( "resources/images/sprites/marioJump1L.png" );
-    PLAYER_JUMPING_TEXTURE_CACHE[1] = LoadTexture( "resources/images/sprites/marioJump2L.png" );
-    PLAYER_JUMPING_TEXTURE_CACHE[2] = LoadTexture( "resources/images/sprites/marioJump1R.png" );
-    PLAYER_JUMPING_TEXTURE_CACHE[3] = LoadTexture( "resources/images/sprites/marioJump2R.png" );
+    playerWalkingTextureCache[0] = LoadTextureFromImage( imgMario1 );
+    playerWalkingTextureCache[1] = LoadTextureFromImage( imgMario2 );
+    playerJumpingTextureCache[0] = LoadTextureFromImage( imgMarioJump1 );
+    playerJumpingTextureCache[1] = LoadTextureFromImage( imgMarioJump2 );
 
-    player->walkingTextureFrame[0] = PLAYER_WALKING_TEXTURE_CACHE[0];
-    player->walkingTextureFrame[1] = PLAYER_WALKING_TEXTURE_CACHE[1];
-    player->walkingTextureFrame[2] = PLAYER_WALKING_TEXTURE_CACHE[2];
-    player->walkingTextureFrame[3] = PLAYER_WALKING_TEXTURE_CACHE[3];
+    ImageFlipHorizontal( &imgMario1 );
+    ImageFlipHorizontal( &imgMario2 );
+    ImageFlipHorizontal( &imgMarioJump1 );
+    ImageFlipHorizontal( &imgMarioJump2 );
+
+    playerWalkingTextureCache[2] = LoadTextureFromImage( imgMario1 );
+    playerWalkingTextureCache[3] = LoadTextureFromImage( imgMario2 );
+    playerJumpingTextureCache[2] = LoadTextureFromImage( imgMarioJump1 );
+    playerJumpingTextureCache[3] = LoadTextureFromImage( imgMarioJump2 );
+
+    player->walkingTextureFrame[0] = playerWalkingTextureCache[0];
+    player->walkingTextureFrame[1] = playerWalkingTextureCache[1];
+    player->walkingTextureFrame[2] = playerWalkingTextureCache[2];
+    player->walkingTextureFrame[3] = playerWalkingTextureCache[3];
     
-    player->jumpingTextureFrame[0] = PLAYER_JUMPING_TEXTURE_CACHE[0];
-    player->jumpingTextureFrame[1] = PLAYER_JUMPING_TEXTURE_CACHE[1];
-    player->jumpingTextureFrame[2] = PLAYER_JUMPING_TEXTURE_CACHE[2];
-    player->jumpingTextureFrame[3] = PLAYER_JUMPING_TEXTURE_CACHE[3];
+    player->jumpingTextureFrame[0] = playerJumpingTextureCache[0];
+    player->jumpingTextureFrame[1] = playerJumpingTextureCache[1];
+    player->jumpingTextureFrame[2] = playerJumpingTextureCache[2];
+    player->jumpingTextureFrame[3] = playerJumpingTextureCache[3];
 
 }
 
 void unloadPlayerTextureCaches( void ) {
-    UnloadTexture( PLAYER_WALKING_TEXTURE_CACHE[0] );
-    UnloadTexture( PLAYER_WALKING_TEXTURE_CACHE[1] );
-    UnloadTexture( PLAYER_WALKING_TEXTURE_CACHE[2] );
-    UnloadTexture( PLAYER_WALKING_TEXTURE_CACHE[3] );
-    UnloadTexture( PLAYER_JUMPING_TEXTURE_CACHE[0] );
-    UnloadTexture( PLAYER_JUMPING_TEXTURE_CACHE[1] );
-    UnloadTexture( PLAYER_JUMPING_TEXTURE_CACHE[2] );
-    UnloadTexture( PLAYER_JUMPING_TEXTURE_CACHE[3] );
+    
+    UnloadTexture( playerWalkingTextureCache[0] );
+    UnloadTexture( playerWalkingTextureCache[1] );
+    UnloadTexture( playerWalkingTextureCache[2] );
+    UnloadTexture( playerWalkingTextureCache[3] );
+    UnloadTexture( playerJumpingTextureCache[0] );
+    UnloadTexture( playerJumpingTextureCache[1] );
+    UnloadTexture( playerJumpingTextureCache[2] );
+    UnloadTexture( playerJumpingTextureCache[3] );
+
+    UnloadImage( imgMario1 );
+    UnloadImage( imgMario2 );
+    UnloadImage( imgMarioJump1 );
+    UnloadImage( imgMarioJump2 );
+
+}
+
+void createPlayerWalkingAnimation( Player* player ) {
+
+    Animation walkingAnimationL = createAnimation( 5, 2 );
+    setAnimationTextures( &walkingAnimationL, 
+        playerWalkingTextureCache[0], 
+        playerWalkingTextureCache[1] );
+
+    Animation walkingAnimationR = createAnimation( 5, 2 );
+    setAnimationTextures( &walkingAnimationR, 
+        playerWalkingTextureCache[2],
+        playerWalkingTextureCache[3] );
+
+    player->walkingAnimationL = walkingAnimationL;
+    player->walkingAnimationR = walkingAnimationR;
+
 }

@@ -9,6 +9,9 @@
 
 #include "main.h"
 
+Texture2D tileTextureCache[26];
+Texture2D currentBackground;
+
 TileMap *newTileMap( char *mapData ) {
 
     int rowCount = 1;
@@ -57,7 +60,7 @@ TileMap *newTileMap( char *mapData ) {
                 bool visible = true;
 
                 if ( *c >= 'A' && *c <= 'Z' ) {
-                    texture = &TILE_TEXTURE_CACHE[(int) (*c-'A')];
+                    texture = &tileTextureCache[(int) (*c-'A')];
                     collideable = true;
                 } else {
                     switch ( *c ) {
@@ -129,14 +132,32 @@ void drawTile( Tile *tile ) {
     }
 }
 
-void drawTileMap( TileMap *tileMap ) {
+void drawTileMap( TileMap *tileMap, Player *player ) {
 
-    for ( int i = 0; i < tileMap->columns * TILE_WIDTH / CURRENT_BACKGROUND.width; i++ ) {
-        DrawTexture( CURRENT_BACKGROUND, i * CURRENT_BACKGROUND.width, 0, WHITE );
+    int cp = player->sp.rect.x / TILE_WIDTH;
+    int lp = player->sp.rect.y / TILE_WIDTH;
+
+    int left = 4;
+    int right = 23;
+    int top = 16;
+    int bottom = 4;
+
+    int iStart = lp - top;
+    iStart = iStart < 0 ? 0 : iStart;
+    int iEnd = lp + bottom;
+    iEnd = iEnd >= tileMap->rows ? tileMap->rows : iEnd;
+
+    int jStart = cp - left;
+    jStart = jStart < 0 ? 0 : jStart;
+    int jEnd = cp + right;
+    jEnd = jEnd >= tileMap->columns ? tileMap->columns : jEnd;
+
+    for ( int i = 0; i < tileMap->columns * TILE_WIDTH / currentBackground.width; i++ ) {
+        DrawTexture( currentBackground, i * currentBackground.width, 0, WHITE );
     }
 
-    for ( int i = 0; i < tileMap->rows; i++ ) {
-        for ( int j = 0; j < tileMap->columns; j++ ) {
+    for ( int i = iStart; i < iEnd; i++ ) {
+        for ( int j = jStart; j < jEnd; j++ ) {
             drawTile( &(tileMap->tiles[i*tileMap->columns+j]) );
         }
     }
@@ -149,7 +170,7 @@ void loadTileTextureCache( void ) {
 
     for ( int i = 0; i < 26; i++ ) {
         sprintf( texturePath, "resources/images/tiles/tile_%c.png", (char) ('A' + i ) );
-        TILE_TEXTURE_CACHE[i] = LoadTexture( texturePath );
+        tileTextureCache[i] = LoadTexture( texturePath );
     }
 
 }
@@ -157,15 +178,15 @@ void loadTileTextureCache( void ) {
 void unloadTileTextureCache( void ) {
     
     for ( int i = 0; i < 26; i++ ) {
-        UnloadTexture( TILE_TEXTURE_CACHE[i] );
+        UnloadTexture( tileTextureCache[i] );
     }
 
 }
 
 void loadBackground( void ) {
-    CURRENT_BACKGROUND = LoadTexture( "resources/images/backgrounds/background0.png" );
+    currentBackground = LoadTexture( "resources/images/backgrounds/background0.png" );
 }
 
 void unloadBackground( void ) {
-    UnloadTexture( CURRENT_BACKGROUND );
+    UnloadTexture( currentBackground );
 }
