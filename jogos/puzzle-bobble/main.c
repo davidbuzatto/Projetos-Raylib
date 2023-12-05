@@ -13,7 +13,7 @@
 #include <time.h>
 #include "include/raylib.h"
 
-const int BALL_RADIUS = 25;
+const int BALL_RADIUS = 20;
 const int BALL_SPEED = 10;
 
 typedef struct Ball {
@@ -31,6 +31,8 @@ typedef struct Cannon {
     double angle;
     Color color;
     Ball *currentBall;
+    double minAngle;
+    double maxAngle;
 } Cannon;
 
 typedef struct {
@@ -72,8 +74,10 @@ int main( void ) {
             .x = screenWidth / 2,
             .y = screenHeight - 100
         },
-        .aimSightLength = 300,
+        .aimSightLength = screenHeight,
         .angle = -90,
+        .minAngle = -170,
+        .maxAngle = -10,
         .color = BLACK,
         .currentBall = &ball
     };
@@ -105,14 +109,23 @@ void inputAndUpdate( GameWorld *gw ) {
     Ball *ball = cannon->currentBall;
 
     if ( IsKeyDown( KEY_RIGHT ) ) {
-        gw->cannon->angle++;
+        if ( cannon->angle < cannon->maxAngle ) {
+            cannon->angle++;
+        } else {
+            cannon->angle = cannon->maxAngle;
+        }
     } else if ( IsKeyDown( KEY_LEFT ) ) {
-        gw->cannon->angle--;
+        if ( cannon->angle > cannon->minAngle ) {
+            cannon->angle--;
+        } else {
+            cannon->angle = cannon->minAngle;
+        }
     }
 
     if ( IsKeyPressed( KEY_SPACE ) ) {
         ball->vel.x = ball->speed * cos( toRadians( cannon->angle ) );
         ball->vel.y = ball->speed * sin( toRadians( cannon->angle ) );
+        ball->angle = cannon->angle;
     }
 
     ball->pos.x += ball->vel.x;
@@ -152,14 +165,41 @@ void drawBall( Ball *ball ) {
 
 void drawCannon( Cannon *cannon ) {
 
-    double ca = cannon->aimSightLength * cos( toRadians( cannon->angle ) );
-    double co = cannon->aimSightLength * sin( toRadians( cannon->angle ) );
+    double ra = toRadians( cannon->angle );
+    double rac = toRadians( 180 - cannon->angle );
+    double w = GetScreenWidth() / 2;
+    double ca = cannon->aimSightLength * cos( ra );
+    double co = cannon->aimSightLength * sin( ra );
+
+    double a = tan( ra );
+    double x = cannon->pos.x;
+    double y = cannon->pos.y - fabs( a * GetScreenWidth() / 2 );
+
+    if ( a < 0 ) {
+        x += w;
+    } else {
+        x += -w;
+    }
 
     DrawLine( 
         (int) cannon->pos.x, 
         (int) cannon->pos.y, 
-        (int) (cannon->pos.x + ca), 
-        (int) (cannon->pos.y + co),
+        (int) x, 
+        (int) y,
+        cannon->color );
+
+    DrawLine( 
+        (int) cannon->pos.x, 
+        (int) cannon->pos.y, 
+        (int) x - BALL_RADIUS, 
+        (int) y,
+        RED );
+
+    DrawLine( 
+        (int) x, 
+        (int ) y, 
+        (int) (x + cannon->aimSightLength * cos( rac ) ),
+        (int) (y + cannon->aimSightLength * sin( rac ) ), 
         cannon->color );
 
 }
