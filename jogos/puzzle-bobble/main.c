@@ -18,6 +18,7 @@ const int BALL_SPEED = 10;
 const double ANGLE_INC = 0.5;
 
 typedef struct Ball {
+    int id;
     Vector2 pos;
     Vector2 vel;
     int speed;
@@ -29,15 +30,22 @@ typedef struct Ball {
     Color color;
     Texture2D texture;
     bool visible;
+    bool selectedForRemoval;
 } Ball;
 
+int currentBallId;
 Ball *movingBall;
 Color BALL_COLORS[8];
 Texture2D BALL_TEXTURES[8];
 Texture2D backgroundTexture;
 Ball *balls[200];
 int ballQuantity;
-int colorQuantity = 8;
+int colorQuantity = 4;
+
+bool graph[200][200];
+bool visited[200];
+int componentIds[200];
+bool removing;
 
 // debug
 int xt = -1;
@@ -67,11 +75,69 @@ void newCannonBall( Cannon *cannon );
 void drawBall( Ball *ball );
 void drawBalls( void );
 void drawCannon( Cannon *cannon );
-bool ballIntercepts( Ball *b1, Ball *b2 );
+bool ballIntercepts( Ball *b1, Ball *b2, int offset );
 bool interceptBalls( Ball *b, int *interceptedIndex );
 
 double toRadians( double degrees );
 double toDegrees( double radians );
+
+void resetGraphDS( void );
+void drawGraph( void );
+void dfsCollectBalls( int sourceId, int baseId );
+void identifyConnectedComponents();
+void dfsConnectedComponents( int sourceId, int componentId );
+bool colorEquals( Color c1, Color c2 );
+
+bool colorEquals( Color c1, Color c2 ) {
+    return c1.r == c2.r &&
+         c1.g == c2.g &&
+         c1.b == c2.b;
+}
+
+void dfsCollectBalls( int sourceId, int baseId ) {
+
+    Ball *ball = balls[baseId];
+    ball->selectedForRemoval = true;
+    Color baseColor = ball->color;
+    
+    if ( !visited[sourceId] && balls[sourceId]->visible ) {
+        visited[sourceId] = true;
+        // adj
+        for ( int i = 0; i < ballQuantity; i++ ) {
+            if ( graph[sourceId][i] == true && 
+                 colorEquals( baseColor, balls[i]->color ) ) {
+                balls[i]->selectedForRemoval = true;
+                dfsCollectBalls( i, baseId );
+            }
+        }
+    }
+
+}
+
+void identifyConnectedComponents() {
+
+    int componentId = 0;
+
+    for ( int i = 0; i < ballQuantity; i++ ) {
+        if ( !visited[i] ) {
+            dfsConnectedComponents( i, componentId );
+            componentId++;
+        }
+    }
+
+}
+
+void dfsConnectedComponents( int sourceId, int componentId ) {
+    if ( !visited[sourceId] ) {
+        visited[sourceId] = true;
+        for ( int i = 0; i < ballQuantity; i++ ) {
+            if ( graph[sourceId][i] == true ) {
+                componentIds[i] = componentId;
+                dfsConnectedComponents( i, componentId );
+            }
+        }
+    }
+}
 
 int main( void ) {
 
@@ -83,6 +149,8 @@ int main( void ) {
     BALL_COLORS[5] = ORANGE;
     BALL_COLORS[6] = GRAY;
     BALL_COLORS[7] = BLACK;
+
+    resetGraphDS();
 
     const int screenWidth = 400;
     const int screenHeight = 700;
@@ -120,9 +188,12 @@ int main( void ) {
     BALL_TEXTURES[7] = LoadTexture( "resources/blackBall.png" );
     backgroundTexture = LoadTexture( "resources/background.png" );
 
-    newCannonBall( &cannon );
-    newCannonBall( &cannon );
+    currentBallId = 0;
+    removing = false;
+
     createInitialBalls();
+    newCannonBall( &cannon );
+    newCannonBall( &cannon );
 
     while ( !WindowShouldClose() ) {
         inputAndUpdate( &gw );
@@ -157,7 +228,7 @@ void inputAndUpdate( GameWorld *gw ) {
         }
     }
 
-    if ( IsKeyPressed( KEY_SPACE ) && movingBall == NULL ) {
+    if ( IsKeyPressed( KEY_SPACE ) && movingBall == NULL && !removing ) {
         movingBall = cannon->currentBall;
         movingBall->pos.x = cannon->pos.x;
         movingBall->pos.y = cannon->pos.y;
@@ -224,10 +295,80 @@ void inputAndUpdate( GameWorld *gw ) {
             movingBall->pos.x = interceptedBall->pos.x + BALL_RADIUS * 2 * cos( pAngle );
             movingBall->pos.y = interceptedBall->pos.y + BALL_RADIUS * 2 * sin( pAngle );
 
+            for ( int i = 0; i < ballQuantity-1; i++ ) {
+                if ( balls[i]->visible && ballIntercepts( movingBall, balls[i], 5 ) ) {
+                    graph[i][movingBall->id] = true;
+                    graph[movingBall->id][i] = true;
+                }
+            }
+
+            memset( visited, 0, 200 );
+            dfsCollectBalls( movingBall->id, movingBall->id );
+
+            int removeQuantity = 0;
+            for ( int i = 0; i < ballQuantity; i++ ) {
+                if ( balls[i]->selectedForRemoval ) {
+                    removeQuantity++;
+                }
+            }
             movingBall = NULL;
+
+            if ( removeQuantity >= 3 ) {
+                
+                for ( int i = 0; i < ballQuantity; i++ ) {
+                    Ball *ball = balls[i];
+                    if ( ball->selectedForRemoval ) {
+                        for ( int j = 0; j < ballQuantity; j++ ) {
+                            Ball *ballj = balls[j];
+                            graph[ball->id][ballj->id] = false;
+                            graph[ballj->id][ball->id] = false;
+                        }
+                    }
+                    ball->vel.y = GetRandomValue( 0.5, 2 );
+                }
+
+                memset( visited, 0, 200 );
+                memset( componentIds, -1, 200 );
+                identifyConnectedComponents();
+                for ( int i = 0; i < ballQuantity; i++ ) {
+                    printf( "(%d) %d\n", i, componentIds[i] );
+                }
+                printf( "\n" );
+
+                for ( int i = 0; i < ballQuantity; i++ ) {
+                    if ( componentIds[i] != 0 ) {
+                        Ball *ball = balls[i];
+                        ball->selectedForRemoval = true;
+                        ball->vel.y = GetRandomValue( 0.5, 2 );
+                    }
+                }
+
+            } else {
+                for ( int i = 0; i < ballQuantity; i++ ) {
+                    balls[i]->selectedForRemoval = false;
+                }
+            }
 
         }
 
+    }
+
+    int q = 0;
+    for ( int i = 0; i < ballQuantity; i++ ) {
+        Ball *ball = balls[i];
+        if ( ball->selectedForRemoval ) {
+            removing = true;
+            ball->pos.y += ball->vel.y;
+            ball->vel.y += 0.5;
+            q++;
+        }
+        if ( ball->pos.y - BALL_RADIUS > GetScreenHeight() + 50 ) {
+            ball->selectedForRemoval = false;
+        }
+    }
+
+    if ( q == 0 ) {
+        removing = false;
     }
 
 }
@@ -244,6 +385,8 @@ void draw( GameWorld *gw ) {
     if ( xt >= 0 && yt >= 0 ) {
         DrawCircle( xt, yt, 10, BLACK );
     }
+
+    //drawGraph();
 
     EndDrawing();
 
@@ -265,7 +408,7 @@ void createInitialBalls( void ) {
 
     for ( int i = 0; i < 7; i++ ) {
         Ball *ball = (Ball*) malloc( sizeof( Ball ) );
-        *ball = newBall( BALL_RADIUS * 2 + i * BALL_RADIUS * 2, -18, colors[i/2], textures[i/2], false );
+        *ball = newBall( BALL_RADIUS * 2 + i * BALL_RADIUS * 2, -18, WHITE, textures[i/2], false );
         balls[ballQuantity++] = ball;
     }
 
@@ -315,11 +458,23 @@ void createInitialBalls( void ) {
         balls[ballQuantity++] = ball;
     }
 
+    // graph induction
+    for ( int i = 0; i < ballQuantity; i++ ) {
+        for ( int j = i+1; j < ballQuantity; j++ ) {
+            if ( balls[j]->visible && ballIntercepts( balls[i], balls[j], 5 ) ) {
+                graph[balls[i]->id][balls[j]->id] = true;
+                graph[balls[j]->id][balls[i]->id] = true;
+            }
+        }
+    }
+
+
 }
 
 Ball newBall( int x, int y, Color color, Texture2D texture, bool visible ) {
 
     return (Ball){
+        .id = currentBallId++,
         .pos = {
             .x = x,
             .y = y
@@ -334,18 +489,21 @@ Ball newBall( int x, int y, Color color, Texture2D texture, bool visible ) {
         .xBounceCount = 0,
         .color = color,
         .texture = texture,
-        .visible = visible
+        .visible = visible,
+        .selectedForRemoval = false
     };
 
 }
 void newCannonBall( Cannon *cannon ) {
 
     Ball *ball = (Ball*) malloc( sizeof( Ball ) );
+    int index = GetRandomValue( 0, colorQuantity-1 );
+
     *ball = newBall( 
         cannon->pos.x - 100, 
         cannon->pos.y + 50, 
-        BALL_COLORS[GetRandomValue( 0, colorQuantity-1 )], 
-        BALL_TEXTURES[GetRandomValue( 0, colorQuantity-1 )], 
+        BALL_COLORS[index], 
+        BALL_TEXTURES[index], 
         true );
 
     cannon->currentBall = cannon->nextBall;
@@ -364,6 +522,14 @@ void drawBall( Ball *ball ) {
         //DrawCircle( ball->pos.x, ball->pos.y, ball->radius, ball->color );
         DrawTexture( ball->texture, ball->pos.x - ball->radius, ball->pos.y - ball->radius, WHITE );
     }
+
+    /*if ( ball->selectedForRemoval ) {
+        DrawCircle( ball->pos.x, ball->pos.y, 10, WHITE );
+    }
+
+    char idStr[5];
+    sprintf( idStr, "%d", ball->id );
+    DrawText( idStr, ball->pos.x, ball->pos.y, 15, BLACK );*/
 
     /*char str[20];
     sprintf( str, "bc: %d", ball->xBounceCount );
@@ -445,7 +611,21 @@ void drawCannon( Cannon *cannon ) {
 
 }
 
-bool ballIntercepts( Ball *b1, Ball *b2 ) {
+void drawGraph( void ) {
+
+    for ( int i = 0; i < ballQuantity; i++ ) {
+        for ( int j = 0; j < ballQuantity; j++ ) {
+            if ( graph[i][j] ) {
+                Ball *b1 = balls[i];
+                Ball *b2 = balls[j];
+                DrawLine( b1->pos.x, b1->pos.y, b2->pos.x, b2->pos.y, BLACK );
+            }
+        }
+    }
+
+}
+
+bool ballIntercepts( Ball *b1, Ball *b2, int offset ) {
 
     if ( b1 == NULL ) {
         return false;
@@ -459,13 +639,14 @@ bool ballIntercepts( Ball *b1, Ball *b2 ) {
     double c2 = b1->pos.y - b2->pos.y;
     double d = hypot( c1, c2 );
 
-    return d <= b1->radius * 2;
+    // should simplify? (not using square root)
+    return d - offset <= b1->radius * 2;
 
 }
 
 bool interceptBalls( Ball *b, int *interceptedIndex ) {
     for ( int i = 0; i < ballQuantity; i++ ) {
-        if ( ballIntercepts( b, balls[i] ) ) {
+        if ( ballIntercepts( b, balls[i], 0 ) ) {
             *interceptedIndex = i;
             return true;
         }
@@ -479,4 +660,10 @@ double toRadians( double degrees ) {
 
 double toDegrees( double radians ) {
     return radians * 180.0 / PI;
+}
+
+void resetGraphDS( void ) {
+    memset( graph, 0, 200 * 200 );
+    memset( visited, 0, 200 );
+    memset( componentIds, -1, 200 );
 }
