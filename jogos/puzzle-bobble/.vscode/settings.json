@@ -14,5 +14,9 @@
     "audioCues.noInlayHints": "off",
     "audioCues.notebookCellCompleted": "off",
     "audioCues.notebookCellFailed": "off",
-    "audioCues.onDebugBreak": "off"
+    "audioCues.onDebugBreak": "off",
+    "files.associations": {
+        "utils.h": "c",
+        "stdio.h": "c"
+    }
 }

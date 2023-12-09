@@ -38,7 +38,7 @@ if ( $clean -or $cleanAndCompile -or $all ) {
 # compile
 if ( $compile -or $cleanAndCompile -or $compileAndRun -or $all ) {
     Write-Host "Compiling..."
-    gcc main.c -o $CompiledFile `
+    gcc main.c ball.c cannon.c utils.c -o $CompiledFile `
         -O1 `
         -Wall `
         -Wextra `
