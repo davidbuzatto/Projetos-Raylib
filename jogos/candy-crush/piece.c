@@ -15,58 +15,79 @@ static Texture2D pieceTextureMap;
 
 void drawPiece( Piece *piece ) {
 
-    int marginX = 0;
-    int marginY = 282;
+    if ( piece->initialized ) {
 
-    switch ( piece->type ) {
-        case PLAIN_RED:    marginX = 16; break;
-        case PLAIN_ORANGE: marginX = 150; break;
-        case PLAIN_YELLOW: marginX = 284; break;
-        case PLAIN_GREEN:  marginX = 418; break;
-        case PLAIN_BLUE:   marginX = 550; break;
-        case PLAIN_PURPLE: marginX = 682; break;
+        int marginX = 0;
+        int marginY = 282;
+
+        switch ( piece->type ) {
+            case PLAIN_RED:    marginX = 16; break;
+            case PLAIN_ORANGE: marginX = 150; break;
+            case PLAIN_YELLOW: marginX = 284; break;
+            case PLAIN_GREEN:  marginX = 418; break;
+            case PLAIN_BLUE:   marginX = 550; break;
+            case PLAIN_PURPLE: marginX = 682; break;
+        }
+
+        Rectangle source = {
+            .x = marginX,
+            .y = marginY,
+            .width = piece->size,
+            .height = piece->size
+        };
+
+        Rectangle dest = {
+            .x = piece->x,
+            .y = piece->y,
+            .width = piece->size,
+            .height = piece->size
+        };
+
+        Vector2 origin = {
+            .x = 0,
+            .y = 0
+        };
+
+        DrawTexturePro( *(piece->textureMap), source, dest, origin , 0, WHITE );
+
     }
-
-    Rectangle source = {
-        .x = marginX,
-        .y = marginY,
-        .width = piece->size,
-        .height = piece->size
-    };
-
-    Rectangle dest = {
-        .x = piece->column * piece->size,
-        .y = piece->line * piece->size,
-        .width = piece->size,
-        .height = piece->size
-    };
-
-    Vector2 origin = {
-        .x = 0,
-        .y = 0
-    };
-
-    DrawTexturePro( *(piece->textureMap), source, dest, origin , 0, WHITE );
 
 }
 
 Piece *createPieces( int lines, int columns ) {
 
-    Piece *pieces = (Piece*) malloc( lines * columns * sizeof( Piece ) );
-    
+    size_t memSize = lines * columns * sizeof( Piece );
+    Piece *pieces = (Piece*) malloc( memSize );
+    memset( pieces, 0, memSize );
+
     for ( int i = 0; i < lines; i++ ) {
         for ( int j = 0; j < columns; j++ ) {
             pieces[i*columns + j] = (Piece){
+                .initialized = true,
                 .line = i,
                 .column = j,
+                .x = j * PIECE_SIZE,
+                .y = i * PIECE_SIZE,
                 .size = PIECE_SIZE,
                 .type = GetRandomValue( 0, 5 ),
                 .textureMap = &pieceTextureMap
             };
         }
+        //break;
     }
 
     return pieces;
+
+}
+
+bool coordVsPieceIntercept( Piece *piece, int x, int y ) {
+
+    if ( piece->initialized ) {
+        return x >= piece->x && x <= piece->x + piece->size &&
+            y >= piece->y && y <= piece->y + piece->size;
+    }
+
+    return false;
 
 }
 
