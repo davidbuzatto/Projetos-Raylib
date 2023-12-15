@@ -5,6 +5,7 @@
 #include "raymath.h"
 
 extern const int PIECE_SIZE;
+extern const double PIECE_SCALE;
 
 typedef enum PieceMovement {
     PIECE_MOVEMENT_LEFT,

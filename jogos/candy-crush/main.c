@@ -16,14 +16,20 @@
 #include "include/piece.h"
 #include "include/utils.h"
 
+const bool LOAD_TEST_MAP = true;
+const bool REMOVAL_TESTS = true;
+
+const int LINES = 13;
+const int COLUMNS = 25;
+
+//const int LINES = 130;
+//const int COLUMNS = 200;
+
 typedef struct GameWorld {
     int lines;
     int columns;
     Piece *pieces;
 } GameWorld;
-
-const int LINES = 13;
-const int COLUMNS = 25;
 
 int xPress;
 int yPress;
@@ -272,20 +278,20 @@ void draw( GameWorld *gw ) {
     BeginDrawing();
     ClearBackground( WHITE );
 
-    int externalMargin = 3;
-    int internalMargin = 1;
+    int externalMargin = 3 * PIECE_SCALE;
+    int internalMargin = 1 * PIECE_SCALE;
 
     DrawRectangleRounded( (Rectangle){
         .x = externalMargin,
         .y = externalMargin,
         .width = GetScreenWidth() - externalMargin * 2,
-        .height = GetScreenHeight() - 6
+        .height = GetScreenHeight() - externalMargin * 2
     }, .05, 10, backgroundColor );
 
     for ( int i = 1; i < gw->lines; i++ ) {
         for ( int j = 0; j < gw->columns; j++ ) {
             DrawLine( 
-                externalMargin + internalMargin + j * PIECE_SIZE + 2, 
+                externalMargin + internalMargin + j * PIECE_SIZE + 2 * PIECE_SCALE, 
                 i * PIECE_SIZE, 
                 (j+1) * PIECE_SIZE - externalMargin - internalMargin * 2, 
                 i * PIECE_SIZE, 
@@ -302,15 +308,28 @@ void draw( GameWorld *gw ) {
             columnDetailColor );
     }
 
-    // tests
-    int lStart[] = { 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 6, 6, 6, 6, 10, 10, 10, 10, 7, 5, 10 };
-    int cStart[] = { 0, 4, 8, 12, 16, 21, 0, 5, 10, 15, 0, 4, 8, 12, 0, 5, 10, 15, 16, 21, 20 };
-    int lEnd[]   = { 3, 3, 3, 3, 3, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3, 3, 4, 3 };
-    int cEnd[]   = { 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 4, 3, 4 };
+    if ( REMOVAL_TESTS ) {
 
-    for ( int i = 0; i < 21; i++ ) {
-        DrawRectangle( cStart[i] * PIECE_SIZE + 5, lStart[i] * PIECE_SIZE + 5, cEnd[i] * PIECE_SIZE - 10, lEnd[i] * PIECE_SIZE - 10, backgroundColor );
-        DrawRectangleLines( cStart[i] * PIECE_SIZE + 5, lStart[i] * PIECE_SIZE + 5, cEnd[i] * PIECE_SIZE - 10, lEnd[i] * PIECE_SIZE - 10, DARKBLUE );
+        int lStart[] = { 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 6, 6, 6, 6, 10, 10, 10, 10, 7, 5, 10 };
+        int cStart[] = { 0, 4, 8, 12, 16, 21, 0, 5, 10, 15, 0, 4, 8, 12, 0, 5, 10, 15, 16, 21, 20 };
+        int lEnd[]   = { 3, 3, 3, 3, 3, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3, 3, 4, 3 };
+        int cEnd[]   = { 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 4, 3, 4 };
+
+        for ( int i = 0; i < 21; i++ ) {
+            DrawRectangle( 
+                cStart[i] * PIECE_SIZE + 5 * PIECE_SCALE, 
+                lStart[i] * PIECE_SIZE + 5 * PIECE_SCALE, 
+                cEnd[i] * PIECE_SIZE - 10 * PIECE_SCALE, 
+                lEnd[i] * PIECE_SIZE - 10 * PIECE_SCALE, 
+                backgroundColor );
+            DrawRectangleLines( 
+                cStart[i] * PIECE_SIZE + 5 * PIECE_SCALE, 
+                lStart[i] * PIECE_SIZE + 5 * PIECE_SCALE, 
+                cEnd[i] * PIECE_SIZE - 10 * PIECE_SCALE, 
+                lEnd[i] * PIECE_SIZE - 10 * PIECE_SCALE, 
+                DARKBLUE );
+        }
+
     }
 
     for ( int i = 0; i < gw->lines; i++ ) {
@@ -350,18 +369,22 @@ void unloadResources( void ) {
 
 void createGameWorld( int lines, int columns ) {
 
-    /*gw = (GameWorld){
-        .lines = lines,
-        .columns = columns,
-        .pieces = createPieces( lines, columns )
-    };*/
+    if ( LOAD_TEST_MAP ) {
 
-    Piece *pieces = createPiecesFromMap( "resources/maps/map01.txt", &lines, &columns );
-    gw = (GameWorld){
-        .lines = lines,
-        .columns = columns,
-        .pieces = pieces
-    };
+        Piece *pieces = createPiecesFromMap( "resources/maps/testMap.txt", &lines, &columns );
+        gw = (GameWorld){
+            .lines = lines,
+            .columns = columns,
+            .pieces = pieces
+        };
+
+    } else {
+        gw = (GameWorld){
+            .lines = lines,
+            .columns = columns,
+            .pieces = createPieces( lines, columns )
+        };
+    }
 
     selectedPiece = NULL;
     exchangePiece = NULL;

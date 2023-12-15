@@ -9,7 +9,9 @@
 
 #include "include/piece.h"
 
-const int PIECE_SIZE = 100;
+#define PIECE_SCALE_INT .5
+const double PIECE_SCALE = PIECE_SCALE_INT;
+const int PIECE_SIZE = 100 * PIECE_SCALE_INT;
 
 static Texture2D pieceTextureMap;
 
@@ -33,8 +35,8 @@ void drawPiece( Piece *piece ) {
         Rectangle source = {
             .x = marginX,
             .y = marginY,
-            .width = piece->size,
-            .height = piece->size
+            .width = 100,
+            .height = 100
         };
 
         Rectangle dest = {
