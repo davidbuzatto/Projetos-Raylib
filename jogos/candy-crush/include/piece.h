@@ -15,12 +15,13 @@ typedef enum PieceMovement {
 } PieceMovement;
 
 typedef enum PieceType {
-    PLAIN_RED,
-    PLAIN_ORANGE,
-    PLAIN_YELLOW,
-    PLAIN_GREEN,
-    PLAIN_BLUE,
-    PLAIN_PURPLE
+    PIECE_TYPE_PLAIN_RED,
+    PIECE_TYPE_PLAIN_ORANGE,
+    PIECE_TYPE_PLAIN_YELLOW,
+    PIECE_TYPE_PLAIN_GREEN,
+    PIECE_TYPE_PLAIN_BLUE,
+    PIECE_TYPE_PLAIN_PURPLE,
+    PIECE_TYPE_INVISIBLE,
 } PieceType;
 
 typedef struct Piece {
@@ -36,6 +37,8 @@ typedef struct Piece {
 
 void drawPiece( Piece *piece );
 Piece *createPieces( int lines, int columns );
+Piece *createPiecesFromMap( const char *fileMapPath, int *lines, int *columns );
+void swapLinesAndColumnsFromPieces( Piece *p1, Piece *p2 );
 bool coordVsPieceIntercept( Piece *piece, int x, int y );
 void loadPieceResources( void );
 void unloadPieceResources( void );

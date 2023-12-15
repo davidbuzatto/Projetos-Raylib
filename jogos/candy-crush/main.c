@@ -22,8 +22,8 @@ typedef struct GameWorld {
     Piece *pieces;
 } GameWorld;
 
-const int LINES = 9;
-const int COLUMNS = 5;
+const int LINES = 13;
+const int COLUMNS = 25;
 
 int xPress;
 int yPress;
@@ -219,16 +219,49 @@ void inputAndUpdate( GameWorld *gw ) {
 
     if ( IsMouseButtonReleased( MOUSE_BUTTON_LEFT ) ) {
 
-        if ( selectedPiece != NULL ) {
-            selectedPiece->x = xSelected;
-            selectedPiece->y = ySelected;
-            selectedPiece = NULL;
+        bool removed = false;
+        if ( selectedPiece != NULL && exchangePiece != NULL ) {
+            int dx = abs( xSelected - selectedPiece->x );
+            int dy = abs( ySelected - selectedPiece->y );
+            if ( dx >= PIECE_SIZE / 2 || dy >= PIECE_SIZE / 2 ) {
+                
+                // change positions
+                swapLinesAndColumnsFromPieces( selectedPiece, exchangePiece );
+                selectedPiece->x = xExchange;
+                selectedPiece->y = yExchange;
+                exchangePiece->x = xSelected;
+                exchangePiece->y = ySelected;
+
+                // verify if it will be removed
+                removed = false; // verify()...
+
+                if ( removed ) {
+                    // map reposition
+                    // chain reaction for more removals...
+                    selectedPiece = NULL;
+                    exchangePiece = NULL;
+                } else {
+                    // the pieces will not be removed
+                    swapLinesAndColumnsFromPieces( selectedPiece, exchangePiece );
+                }
+
+            }
         }
 
-        if ( exchangePiece != NULL ) {
-            exchangePiece->x = xExchange;
-            exchangePiece->y = yExchange;
-            exchangePiece = NULL;
+        if ( !removed ) {
+
+            if ( selectedPiece != NULL ) {
+                selectedPiece->x = xSelected;
+                selectedPiece->y = ySelected;
+                selectedPiece = NULL;
+            }
+
+            if ( exchangePiece != NULL ) {
+                exchangePiece->x = xExchange;
+                exchangePiece->y = yExchange;
+                exchangePiece = NULL;
+            }
+
         }
     }
 
@@ -269,6 +302,17 @@ void draw( GameWorld *gw ) {
             columnDetailColor );
     }
 
+    // tests
+    int lStart[] = { 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 6, 6, 6, 6, 10, 10, 10, 10, 7, 5, 10 };
+    int cStart[] = { 0, 4, 8, 12, 16, 21, 0, 5, 10, 15, 0, 4, 8, 12, 0, 5, 10, 15, 16, 21, 20 };
+    int lEnd[]   = { 3, 3, 3, 3, 3, 4, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3, 3, 4, 3 };
+    int cEnd[]   = { 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 3, 3, 3, 3, 4, 4, 4, 4, 4, 3, 4 };
+
+    for ( int i = 0; i < 21; i++ ) {
+        DrawRectangle( cStart[i] * PIECE_SIZE + 5, lStart[i] * PIECE_SIZE + 5, cEnd[i] * PIECE_SIZE - 10, lEnd[i] * PIECE_SIZE - 10, backgroundColor );
+        DrawRectangleLines( cStart[i] * PIECE_SIZE + 5, lStart[i] * PIECE_SIZE + 5, cEnd[i] * PIECE_SIZE - 10, lEnd[i] * PIECE_SIZE - 10, DARKBLUE );
+    }
+
     for ( int i = 0; i < gw->lines; i++ ) {
         for ( int j = 0; j < gw->columns; j++ ) {
             Piece *piece = &gw->pieces[i*gw->columns + j];
@@ -306,10 +350,17 @@ void unloadResources( void ) {
 
 void createGameWorld( int lines, int columns ) {
 
-    gw = (GameWorld){
+    /*gw = (GameWorld){
         .lines = lines,
         .columns = columns,
         .pieces = createPieces( lines, columns )
+    };*/
+
+    Piece *pieces = createPiecesFromMap( "resources/maps/map01.txt", &lines, &columns );
+    gw = (GameWorld){
+        .lines = lines,
+        .columns = columns,
+        .pieces = pieces
     };
 
     selectedPiece = NULL;
