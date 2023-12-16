@@ -8,6 +8,7 @@
 #include "include/raylib.h"
 
 #include "include/piece.h"
+#include "include/utils.h"
 
 #define PIECE_SCALE_INT .5
 const double PIECE_SCALE = PIECE_SCALE_INT;
@@ -55,6 +56,30 @@ void drawPiece( Piece *piece ) {
 
     }
 
+    if ( DEBUG ) {
+        char debugInfo[50];
+        //sprintf( debugInfo, "%dx%d\n[%df;%df]", piece->line, piece->column, piece->x, piece->y );
+        sprintf( debugInfo, "%dx%d", piece->line, piece->column );
+        DrawText( debugInfo, piece->x, piece->y, 20, BLACK );
+    }
+
+}
+
+Piece createPiece( int line, int column, int x, int y, int size, PieceType type ) {
+    return (Piece){
+        .initialized = true,
+        .line = line,
+        .column = column,
+        .x = x,
+        .y = y,
+        .size = size,
+        .type = type,
+        .textureMap = &pieceTextureMap
+    };
+}
+
+Piece createRandomPiece( int line, int column, int x, int y, int size ) {
+    return createPiece( line, column, x, y, size, GetRandomValue( 0, 5 ) );
 }
 
 Piece *createPieces( int lines, int columns ) {
@@ -65,16 +90,11 @@ Piece *createPieces( int lines, int columns ) {
 
     for ( int i = 0; i < lines; i++ ) {
         for ( int j = 0; j < columns; j++ ) {
-            pieces[i*columns + j] = (Piece){
-                .initialized = true,
-                .line = i,
-                .column = j,
-                .x = j * PIECE_SIZE,
-                .y = i * PIECE_SIZE,
-                .size = PIECE_SIZE,
-                .type = GetRandomValue( 0, 5 ),
-                .textureMap = &pieceTextureMap
-            };
+            pieces[i*columns + j] = createRandomPiece(
+                i, j,
+                j * PIECE_SIZE, i * PIECE_SIZE,
+                PIECE_SIZE
+            );
         }
     }
 
@@ -151,16 +171,11 @@ Piece *createPiecesFromMap( const char *fileMapPath, int *lines, int *columns ) 
             }
             text++;
 
-            pieces[i**columns + j] = (Piece){
-                .initialized = true,
-                .line = i,
-                .column = j,
-                .x = j * PIECE_SIZE,
-                .y = i * PIECE_SIZE,
-                .size = PIECE_SIZE,
-                .type = type,
-                .textureMap = &pieceTextureMap
-            };
+            pieces[i**columns + j] = createPiece(
+                i, j,
+                j * PIECE_SIZE, i * PIECE_SIZE,
+                PIECE_SIZE, type
+            );
         }
     }
 
@@ -168,16 +183,17 @@ Piece *createPiecesFromMap( const char *fileMapPath, int *lines, int *columns ) 
 
 }
 
-void swapLinesAndColumnsFromPieces( Piece *p1, Piece *p2 ) {
+void swapDataAndPointers( Piece **p1, Piece **p2 ) {
 
-    int tLine = p1->line;
-    int tColumn = p1->column;
+    // value swap
+    Piece temp = **p1;
+    **p1 = **p2;
+    **p2 = temp;
 
-    p1->line = p2->line;
-    p1->column = p2->column;
-
-    p2->line = tLine;
-    p2->column = tColumn;
+    // pointer swap
+    Piece *pTemp = *p1;
+    *p1 = *p2;
+    *p2 = pTemp;
 
 }
 
@@ -185,7 +201,7 @@ bool coordVsPieceIntercept( Piece *piece, int x, int y ) {
 
     if ( piece->initialized ) {
         return x >= piece->x && x <= piece->x + piece->size &&
-            y >= piece->y && y <= piece->y + piece->size;
+               y >= piece->y && y <= piece->y + piece->size;
     }
 
     return false;

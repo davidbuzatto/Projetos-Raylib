@@ -7,6 +7,8 @@
 #include <time.h>
 #include "include/raylib.h"
 
+const bool DEBUG = false;
+
 double toRadians( double degrees ) {
     return degrees * PI / 180.0;
 }
