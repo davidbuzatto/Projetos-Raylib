@@ -58,7 +58,6 @@ void drawPiece( Piece *piece ) {
 
     if ( DEBUG ) {
         char debugInfo[50];
-        //sprintf( debugInfo, "%dx%d\n[%df;%df]", piece->line, piece->column, piece->x, piece->y );
         sprintf( debugInfo, "%dx%d", piece->line, piece->column );
         DrawText( debugInfo, piece->x, piece->y, 20, BLACK );
     }
@@ -180,6 +179,15 @@ Piece *createPiecesFromMap( const char *fileMapPath, int *lines, int *columns ) 
     }
 
     return pieces;
+
+}
+
+void swapData( Piece **p1, Piece **p2 ) {
+
+    // value swap
+    Piece temp = **p1;
+    **p1 = **p2;
+    **p2 = temp;
 
 }
 

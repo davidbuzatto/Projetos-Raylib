@@ -41,6 +41,7 @@ Piece createPiece( int line, int column, int x, int y, int size, PieceType type 
 Piece createRandomPiece( int line, int column, int x, int y, int size );
 Piece *createPieces( int lines, int columns );
 Piece *createPiecesFromMap( const char *fileMapPath, int *lines, int *columns );
+void swapData( Piece **p1, Piece **p2 );
 void swapDataAndPointers( Piece **p1, Piece **p2 );
 bool coordVsPieceIntercept( Piece *piece, int x, int y );
 void loadPieceResources( void );
