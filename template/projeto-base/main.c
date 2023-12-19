@@ -18,7 +18,7 @@
 
 
 // enums, structs, unions and custom types
-typedef struct {
+typedef struct GameWorld {
     int dummy;
 } GameWorld;
 
