@@ -17,7 +17,7 @@
 #define MAX_OBSTACLES 10
 
 const int LAUNCH_MAX_DISTANCE = 100;
-const float GRAVITY = 7;
+const float GRAVITY = 5;
 
 typedef struct Ball {
     Vector2 pos;
@@ -46,7 +46,9 @@ int yOffset;
 float xLaunch;
 float yLaunch;
 bool launched;
+double relativeAngle;
 float launchAngle;
+int launchDistance;
 float pi;
 
 int obstacleQuantity;
@@ -98,6 +100,8 @@ void createGameWorld( void ) {
     yLaunch = 200;
     launched = false;
     launchAngle = 0;
+    relativeAngle = 0;
+    launchDistance = 0;
     pi = acos(-1);
     selectedBall = NULL;
 
@@ -181,41 +185,44 @@ void inputAndUpdate( GameWorld *gw ) {
 
             int c1 = xLaunch - selectedBall->pos.x;
             int c2 = yLaunch - selectedBall->pos.y;
-            int distance = sqrt( c1 * c1 + c2 * c2 );
-            double relAngle = atan2( c2, c1 ) + pi;
-            launchAngle = pi - relAngle;
-            /*double relAngle = toDegrees( atan2( c2, c1 ) ) + 180;
-            printf( "%.2f\n", relAngle );*/
 
-            if ( distance >= LAUNCH_MAX_DISTANCE ) {
-                selectedBall->pos.x = xLaunch + cos( relAngle ) * LAUNCH_MAX_DISTANCE;
-                selectedBall->pos.y = yLaunch + sin( relAngle ) * LAUNCH_MAX_DISTANCE;
+            launchDistance = sqrt( c1 * c1 + c2 * c2 );
+            relativeAngle = atan2( c2, c1 ) + pi;
+            launchAngle = pi - relativeAngle;
+
+            if ( launchDistance >= LAUNCH_MAX_DISTANCE ) {
+                selectedBall->pos.x = xLaunch + cos( relativeAngle ) * LAUNCH_MAX_DISTANCE;
+                selectedBall->pos.y = yLaunch + sin( relativeAngle ) * LAUNCH_MAX_DISTANCE;
             }
+
+            float vx =  fabs( selectedBall->pos.x - xLaunch ) / LAUNCH_MAX_DISTANCE;
+            float vy = -fabs( selectedBall->pos.y - yLaunch ) / LAUNCH_MAX_DISTANCE;
+            selectedBall->vel.x = vx * cos( launchAngle ) * 80;
+            selectedBall->vel.y = vy * sin( launchAngle ) * 80;
 
         }
 
     }
 
     if ( IsMouseButtonReleased( MOUSE_BUTTON_LEFT ) ) {
+
         if ( selectedBall != NULL ) {
+
             if ( selectedBall->pos.x != xLaunch && selectedBall->pos.y != yLaunch ) {
                 launched = true;
-                selectedBall->vel.x =  abs( (int) ( ( selectedBall->pos.x - xLaunch ) * 0.8 ) );
-                selectedBall->vel.y = -abs( (int) ( ( selectedBall->pos.y - yLaunch ) * 0.8 ) );
             }
+
             /*selectedBall->pos.x = xLaunch;
             selectedBall->pos.y = yLaunch;*/
             selectedBall = NULL;
+
         }
     }
 
     if ( launched ) {
         ball->pos.x += ball->vel.x;
         ball->pos.y += ball->vel.y;
-        ball->vel.x = ball->vel.x * cos( launchAngle );
-        ball->vel.y = ball->vel.y * sin( launchAngle );
         ball->vel.y += GRAVITY;
-
     }
 
     if ( IsMouseButtonPressed( MOUSE_BUTTON_RIGHT ) ) {
@@ -240,15 +247,49 @@ void draw( GameWorld *gw ) {
 }
 
 void drawBall( Ball *ball ) {
+    
+    if ( !launched ) {
 
-    DrawLine( xLaunch, yLaunch, ball->pos.x, ball->pos.y, BLACK );
+        DrawLine( xLaunch, yLaunch, ball->pos.x, ball->pos.y, BLACK );
+
+        float px = ball->pos.x;
+        float py = ball->pos.y;
+        float vx = ball->vel.x;
+        float vy = ball->vel.y;
+        int iterations = 50;
+
+        for ( int i = 0; i < iterations; i++ ) {
+            if ( i != 0 ) {
+                DrawLine( px-vx, py-vy+GRAVITY, px, py, ball->strokeColor );
+            }
+            px += vx;
+            py += vy;
+            vy += GRAVITY;
+        }
+
+        px = ball->pos.x;
+        py = ball->pos.y;
+        vx = ball->vel.x;
+        vy = ball->vel.y;
+        for ( int i = 0; i < iterations; i++ ) {
+            DrawCircle( px, py, 5, ball->fillColor );
+            px += vx;
+            py += vy;
+            vy += GRAVITY;
+        }
+
+    }
 
     DrawCircle( ball->pos.x, ball->pos.y, ball->radius, ball->strokeColor );
     DrawCircle( ball->pos.x, ball->pos.y, ball->radius-2, ball->fillColor );
 
-    /*char debugData[50];
-    sprintf( debugData, "%dx%d", (int) ball->pos.x, (int) ball->pos.y );
-    DrawText( debugData, ball->pos.x, ball->pos.y - 10, 10, BLACK );*/
+    char debugData[100];
+    sprintf( debugData, 
+            "x: %d, y: %d\nvx: %.2f, vy: %.2f\nlaunch angle: %.2f", 
+            (int) ball->pos.x, (int) ball->pos.y, 
+            ball->vel.x, ball->vel.y, 
+            toDegrees( launchAngle ) );
+    DrawText( debugData, ball->pos.x, ball->pos.y + ball->radius, 10, BLACK );
 
 }
 
