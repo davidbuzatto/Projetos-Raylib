@@ -1,4 +1,4 @@
-angry birds
+jump and run
 columns
 asteroids/galaga
 flappy bird
