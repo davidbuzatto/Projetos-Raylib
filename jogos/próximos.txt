@@ -1,4 +1,5 @@
+flappy bird
+snake
 jump and run
 columns
 asteroids/galaga
-flappy bird
