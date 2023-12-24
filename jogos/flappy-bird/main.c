@@ -17,15 +17,19 @@
 #define MAX_ACTIVE_PIPES 10
 #define FLAPPY_BIRD_COLLISION_PROBES_QUANTITY 12
 
-const int GROUND_HEIGHT = 80;
+const bool MIMIMI_MODE = false;
+
+const int GROUND_HEIGHT = 90;
 const float GRAVITY = .5;
 const Color BACKGROUND_COLOR = { .r = 113, .g = 198, .b = 206, .a = 255 };
 const Color COLLISION_RESOLUTION_COLOR = { .r = 0, .g = 121, .b = 241, .a = 150 };
 const Color COLLISION_RESOLUTION_COL_COLOR = { .r = 230, .g = 41, .b = 55, .a = 150 };
 const bool SHOW_COLLISION_RESOLUTION_INFORMATION = false;
 
-const float FIRST_PLANE_SPEED = -2;
-const float SECOND_PLANE_SPEED = -1;
+const float FIRST_PLANE_SPEED = -4;
+const float SECOND_PLANE_SPEED = -2;
+const float GAME_SPEED_LEVEL_INCREMENT = -0.5;
+const int SCORE_TO_LEVEL_UP = 10;
 
 const int FLAPPY_BIRD_X_START = 250;
 const int FLAPPY_BIRD_Y_START = 250;
@@ -40,12 +44,12 @@ const float FLAPPY_BIRD_BASE_Y_VELOCITY = 0;
 const float FLAPPY_BIRD_JUMP_SPEED = -9;
 
 const int PIPE_COUPLE_X_START = 500;
-const int PIPE_WIDE_WIDTH = 90;
-const int PIPE_NARROW_WIDTH = 80;
+const int PIPE_WIDE_WIDTH = 100;
+const int PIPE_NARROW_WIDTH = 90;
 const int PIPE_SLICE_HEIGHT = 40;
-const int PIPE_COUPLE_NARROW_TOTAL_SLICES = 8;
-const int PIPE_COUPLE_HORIZONTAL_GAP = 180;
-const int PIPE_COUPLE_VERTICAL_GAP = 170;
+const int PIPE_COUPLE_NARROW_TOTAL_SLICES = 7;
+const int PIPE_COUPLE_HORIZONTAL_GAP = 200;
+const int PIPE_COUPLE_VERTICAL_GAP = 200;
 const int PIPE_COUPLE_START_QUANTITY = 5;
 
 const int SCORE_Y_POSITION = 30;
@@ -121,6 +125,8 @@ typedef struct Background {
 typedef struct Score {
     Vector2 pos;
     int score;
+    int scoreToLevelUp;
+    int level;
     int fontSize;
     int dropShadowDistance;
     Color frontColor;
@@ -142,6 +148,7 @@ Background background;
 Score score;
 
 int pipeCoupleQuantity = 0;
+float gameSpeed;
 
 Texture2D backgroundTextureLoop;
 Texture2D flappyBirdTexture1;
@@ -303,6 +310,18 @@ void inputAndUpdate( GameWorld *gw ) {
         if ( fb->pos.x - fb->width / 2 > pcs[0].pos.x + pcs[0].wideWidth &&
              !pcs[0].leftBehind ) {
             score->score++;
+            if ( score->score % score->scoreToLevelUp == 0 ) {
+                score->level++;
+                if ( MIMIMI_MODE ) {
+                    gameSpeed += -50;
+                } else {
+                    gameSpeed += GAME_SPEED_LEVEL_INCREMENT * score->level;
+                }
+                ground->vel.x = gameSpeed;
+                for ( int i = 0; i < pipeCoupleQuantity; i++ ) {
+                    pcs[i].vel.x = gameSpeed;
+                }
+            }
             pcs[0].leftBehind = true;
         }
 
@@ -343,8 +362,8 @@ void draw( const GameWorld *gw ) {
 
     drawBackground( gw->background );
     drawGround( gw->ground );
-    drawPipes( gw->pcs );
     drawFlappyBird( gw->fb );
+    drawPipes( gw->pcs );
     drawScore( gw->score );
 
     if ( SHOW_COLLISION_RESOLUTION_INFORMATION ) {
@@ -622,8 +641,8 @@ void loadGameResources( void ) {
     flappyBirdBloodTexture = LoadTexture( "resources/flappyBirdBloodTexture.png" );
     groundTextureLoop = LoadTexture( "resources/groundTextureLoop.png" );
     pipeCoupleSliceTexture = LoadTexture( "resources/pipeCoupleSliceTexture.png" );
-    pipeCoupleMouthUpTexture = LoadTexture( "resources/pipeCoupleTopUpTexture.png" );
-    pipeCoupleMouthDownTexture = LoadTexture( "resources/pipeCoupleTopDownTexture.png" );
+    pipeCoupleMouthUpTexture = LoadTexture( "resources/pipeCoupleMouthUpTexture.png" );
+    pipeCoupleMouthDownTexture = LoadTexture( "resources/pipeCoupleMouthDownTexture.png" );
 
 }
 
@@ -646,6 +665,7 @@ void createGameWorld( void ) {
     pipeCoupleQuantity = 0;
     collisionDetected = false;
     upDownCounter = 1;
+    gameSpeed = FIRST_PLANE_SPEED;
 
     float w2 = FLAPPY_BIRD_WIDTH / 2;
     float h2 = FLAPPY_BIRD_HEIGHT / 2;
@@ -699,7 +719,7 @@ void createGameWorld( void ) {
             .y = GetScreenHeight() - GROUND_HEIGHT,
         },
         .vel = {
-            .x = FIRST_PLANE_SPEED,
+            .x = gameSpeed,
             .y = 0
         },
         .width = GetScreenWidth(),
@@ -728,6 +748,8 @@ void createGameWorld( void ) {
             .y = SCORE_Y_POSITION
         },
         .score = 0,
+        .scoreToLevelUp = SCORE_TO_LEVEL_UP,
+        .level = 0,
         .fontSize = SCORE_FONT_SIZE,
         .dropShadowDistance = SCORE_DROP_SHADOW_DISTANCE,
         .frontColor = WHITE,
@@ -754,21 +776,35 @@ void destroyGameWorld( void ) {
 
 PipeCouple newPipeCouple( int position ) {
 
+    int narrowSliceUp;
+    int narrowTotalSlices;
+    int diff;
+
+    if ( MIMIMI_MODE ) {
+        narrowSliceUp = 1;
+        narrowTotalSlices = 2;
+        diff = PIPE_COUPLE_NARROW_TOTAL_SLICES - (narrowTotalSlices - narrowSliceUp) - 1;
+    } else {
+        narrowSliceUp = GetRandomValue( 1, 6 );
+        narrowTotalSlices = PIPE_COUPLE_NARROW_TOTAL_SLICES;
+        diff = 0;
+    }
+
     return (PipeCouple){
         .pos = {
             .x = PIPE_COUPLE_X_START + ( PIPE_WIDE_WIDTH + PIPE_COUPLE_HORIZONTAL_GAP ) * position,
             .y = 0
         },
         .vel = {
-            .x = FIRST_PLANE_SPEED,
+            .x = gameSpeed,
             .y = 0
         },
         .wideWidth = PIPE_WIDE_WIDTH,
         .narrowWidth = PIPE_NARROW_WIDTH,
         .sliceHeight = PIPE_SLICE_HEIGHT,
-        .narrowSlicesUp = GetRandomValue( 1, 7 ),
-        .narrowTotalSlices = PIPE_COUPLE_NARROW_TOTAL_SLICES,
-        .verticalGap = PIPE_COUPLE_VERTICAL_GAP,
+        .narrowSlicesUp = narrowSliceUp,
+        .narrowTotalSlices = narrowTotalSlices,
+        .verticalGap = PIPE_COUPLE_VERTICAL_GAP + diff * PIPE_SLICE_HEIGHT,
         .sliceTexture = &pipeCoupleSliceTexture,
         .mouthUpTexture = &pipeCoupleMouthUpTexture,
         .mouthDownTexture = &pipeCoupleMouthDownTexture,
