@@ -22,14 +22,15 @@ const float GRAVITY = .5;
 const Color BACKGROUND_COLOR = { .r = 113, .g = 198, .b = 206, .a = 255 };
 const Color COLLISION_RESOLUTION_COLOR = { .r = 0, .g = 121, .b = 241, .a = 150 };
 const Color COLLISION_RESOLUTION_COL_COLOR = { .r = 230, .g = 41, .b = 55, .a = 150 };
+const bool SHOW_COLLISION_RESOLUTION_INFORMATION = false;
 
 const float FIRST_PLANE_SPEED = -2;
 const float SECOND_PLANE_SPEED = -1;
 
 const int FLAPPY_BIRD_X_START = 250;
 const int FLAPPY_BIRD_Y_START = 250;
-const int FLAPPY_BIRD_WIDTH = 60;
-const int FLAPPY_BIRD_HEIGHT = 42;
+const int FLAPPY_BIRD_WIDTH = 68;
+const int FLAPPY_BIRD_HEIGHT = 48;
 const float FLAPPY_BIRD_START_ATTACK_ANGLE = 0;
 const float FLAPPY_BIRD_ATTACK_ANGLE_DECREMENT = -30;
 const float FLAPPY_BIRD_ATTACK_ANGLE_INCREMENT = .7;
@@ -47,6 +48,10 @@ const int PIPE_COUPLE_HORIZONTAL_GAP = 180;
 const int PIPE_COUPLE_VERTICAL_GAP = 170;
 const int PIPE_COUPLE_START_QUANTITY = 5;
 
+const int SCORE_Y_POSITION = 30;
+const int SCORE_FONT_SIZE = 50;
+const int SCORE_DROP_SHADOW_DISTANCE = 2;
+
 typedef struct PolarCoord {
     float angle;
     float distance;
@@ -55,6 +60,7 @@ typedef struct PolarCoord {
 typedef enum FlappyBirdState {
     FLAPPY_BIRD_STATE_IDLE,
     FLAPPY_BIRD_STATE_ALIVE,
+    FLAPPY_BIRD_STATE_COLLIDED,
     FLAPPY_BIRD_STATE_DEAD
 } FlappyBirdState;
 
@@ -67,7 +73,15 @@ typedef struct FlappyBird {
     float attackAngle;
     float minAttackAngle;
     float maxAttackAngle;
-    Texture *texture;
+    Texture *frame1Texture;
+    Texture *frame2Texture;
+    Texture *frame3Texture;
+    Texture *currentTexture;
+    Texture *bloodTexture;
+    int textureCounter;
+    int maxTextureCounter;
+    int currentTextureFrame;
+    int maxTextureFrame;
     FlappyBirdState state;
     PolarCoord collisionProbes[FLAPPY_BIRD_COLLISION_PROBES_QUANTITY];
 } FlappyBird;
@@ -84,6 +98,7 @@ typedef struct PipeCouple {
     Texture *sliceTexture;
     Texture *mouthUpTexture;
     Texture *mouthDownTexture;
+    bool leftBehind;
 } PipeCouple;
 
 typedef struct Ground {
@@ -103,26 +118,41 @@ typedef struct Background {
     Color color;
 } Background;
 
+typedef struct Score {
+    Vector2 pos;
+    int score;
+    int fontSize;
+    int dropShadowDistance;
+    Color frontColor;
+    Color shadowColor;
+} Score;
+
 typedef struct GameWorld {
     FlappyBird *fb;
     PipeCouple pcs[MAX_ACTIVE_PIPES];
     Ground *ground;
     Background *background;
+    Score *score;
 } GameWorld;
 
 GameWorld gw;
 FlappyBird fb;
 Ground ground;
 Background background;
+Score score;
 
 int pipeCoupleQuantity = 0;
 
 Texture2D backgroundTextureLoop;
-Texture2D flappyBirdTexture;
+Texture2D flappyBirdTexture1;
+Texture2D flappyBirdTexture2;
+Texture2D flappyBirdTexture3;
+Texture2D flappyBirdBloodTexture;
 Texture2D groundTextureLoop;
 Texture2D pipeCoupleSliceTexture;
 Texture2D pipeCoupleMouthUpTexture;
 Texture2D pipeCoupleMouthDownTexture;
+int upDownCounter;
 
 // collision resolution
 Rectangle pipeUpSlicesRect = {0};
@@ -143,6 +173,8 @@ void drawGround( const Ground *ground );
 void drawFlappyBird( const FlappyBird *fb );
 void drawPipe( const PipeCouple *pc );
 void drawPipes( const PipeCouple *pcs );
+void drawScore( const Score *score );
+void drawGUIMessages( const FlappyBird *fb );
 void drawCollisionResolutionInformation( const GameWorld *gw );
 
 PipeCouple newPipeCouple( int position );
@@ -181,14 +213,38 @@ void inputAndUpdate( GameWorld *gw ) {
     PipeCouple *pcs = gw->pcs;
     Ground *ground = gw->ground;
     Background *background = gw->background;
+    Score *score = gw->score;
 
     if ( fb->state == FLAPPY_BIRD_STATE_IDLE ) {
-
+        
         if ( IsKeyPressed( KEY_SPACE ) || IsMouseButtonPressed( MOUSE_BUTTON_LEFT ) ) {
             fb->state = FLAPPY_BIRD_STATE_ALIVE;
         }
 
     } else if ( fb->state == FLAPPY_BIRD_STATE_ALIVE ) {
+
+        fb->textureCounter++;
+        if ( fb->textureCounter > fb->maxTextureCounter ) {
+            fb->textureCounter = 0;
+            fb->currentTextureFrame += upDownCounter;
+            if ( fb->currentTextureFrame == fb->maxTextureFrame ) {
+                upDownCounter = -upDownCounter;
+            } else if ( fb->currentTextureFrame == 0 ) {
+                upDownCounter = -upDownCounter;
+            }
+        }
+
+        switch ( fb->currentTextureFrame ) {
+            case 0:
+                fb->currentTexture = fb->frame1Texture;
+                break;
+            case 1:
+                fb->currentTexture = fb->frame2Texture;
+                break;
+            case 2:
+                fb->currentTexture = fb->frame3Texture;
+                break;
+        }
 
         ground->pos.x += ground->vel.x;
         if ( ground->pos.x < -ground->texture->width ) {
@@ -240,11 +296,15 @@ void inputAndUpdate( GameWorld *gw ) {
 
         if ( flappyBirdVsPipeCoupleIntercept( fb, &pcs[0] ) ||
              flappyBirdVsPipeCoupleIntercept( fb, &pcs[1] ) ) {
-            fb->state = FLAPPY_BIRD_STATE_DEAD;
+            fb->state = FLAPPY_BIRD_STATE_COLLIDED;
+            fb->vel.y = fb->jumpSpeed;
         }
-        /*if ( flappyBirdVsPipeCoupleIntercept( fb, &pcs[0] ) ) {
-            fb->state = FLAPPY_BIRD_STATE_DEAD;
-        }*/
+
+        if ( fb->pos.x - fb->width / 2 > pcs[0].pos.x + pcs[0].wideWidth &&
+             !pcs[0].leftBehind ) {
+            score->score++;
+            pcs[0].leftBehind = true;
+        }
 
         if ( fb->attackAngle < fb->minAttackAngle ) {
             fb->attackAngle = fb->minAttackAngle;
@@ -252,6 +312,19 @@ void inputAndUpdate( GameWorld *gw ) {
             fb->attackAngle = fb->maxAttackAngle;
         }
 
+        fb->vel.y += GRAVITY;
+
+    } else if ( fb->state == FLAPPY_BIRD_STATE_COLLIDED ) {
+
+        fb->pos.y += fb->vel.y;
+        fb->pos.x += 6;
+
+        if ( fb->pos.y + fb->height/2 > ground->pos.y ) {
+            fb->pos.y = ground->pos.y - fb->height/2;
+            fb->state = FLAPPY_BIRD_STATE_DEAD;
+        }
+
+        fb->attackAngle += 15;
         fb->vel.y += GRAVITY;
 
     } else if ( fb->state == FLAPPY_BIRD_STATE_DEAD ) {
@@ -272,8 +345,13 @@ void draw( const GameWorld *gw ) {
     drawGround( gw->ground );
     drawPipes( gw->pcs );
     drawFlappyBird( gw->fb );
+    drawScore( gw->score );
 
-    drawCollisionResolutionInformation( gw );
+    if ( SHOW_COLLISION_RESOLUTION_INFORMATION ) {
+        drawCollisionResolutionInformation( gw );
+    }
+
+    drawGUIMessages( gw->fb );
 
     EndDrawing();
 
@@ -316,7 +394,7 @@ void drawGround( const Ground *ground ) {
 void drawFlappyBird( const FlappyBird *fb ) {
     
     DrawTexturePro(
-        *(fb->texture),
+        *(fb->currentTexture),
         (Rectangle){
             .x = 0,
             .y = 0,
@@ -336,6 +414,10 @@ void drawFlappyBird( const FlappyBird *fb ) {
         fb->attackAngle,
         WHITE
     );
+
+    if ( fb->state == FLAPPY_BIRD_STATE_DEAD ) {
+        DrawTexture( *(fb->bloodTexture), fb->pos.x - fb->width/2, fb->pos.y + fb->height/2, WHITE );
+    }
 
 }
 
@@ -377,6 +459,56 @@ void drawPipes( const PipeCouple *pcs ) {
 
     for ( int i = 0; i < pipeCoupleQuantity; i++ ) {
         drawPipe( &pcs[i] );
+    }
+
+}
+
+void drawScore( const Score *score ) {
+
+    char data[20];
+    sprintf( data, "%d", score->score );
+
+    int w = MeasureText( data, score->fontSize );
+    int x = score->pos.x + GetScreenWidth() / 2 - w / 2;
+
+    DrawText( 
+        data, 
+        x + score->dropShadowDistance, 
+        score->pos.y + score->dropShadowDistance, 
+        score->fontSize, 
+        score->shadowColor );
+        
+    DrawText( data, x, score->pos.y, score->fontSize, score->frontColor );
+    
+
+}
+
+void drawGUIMessages( const FlappyBird *fb ) {
+
+    if ( fb->state == FLAPPY_BIRD_STATE_IDLE ) {
+        char message[200];
+        sprintf( message, "Pressione <espaço>" );
+        int w = MeasureText( message, 20 );
+        DrawText( message, fb->pos.x - w/2 + 2, fb->pos.y + fb->height + 2, 20, BLACK );
+        DrawText( message, fb->pos.x - w/2, fb->pos.y + fb->height, 20, WHITE );
+        sprintf( message, "ou clique com o mouse para começar!" );
+        w = MeasureText( message, 20 );
+        DrawText( message, fb->pos.x - w/2 + 2, fb->pos.y + fb->height + 22, 20, BLACK );
+        DrawText( message, fb->pos.x - w/2, fb->pos.y + fb->height + 20, 20, WHITE );
+    } else if ( fb->state == FLAPPY_BIRD_STATE_DEAD ) {
+        char message[200];
+        sprintf( message, "GAME OVER! " );
+        int w = MeasureText( message, 80 );
+        DrawText( message, GetScreenWidth() / 2 - w/2 + 4, GetScreenHeight() / 2 - 76, 80, BLACK );
+        DrawText( message, GetScreenWidth() / 2 - w/2, GetScreenHeight() / 2 - 80, 80, RED );
+        sprintf( message, "Pressione <espaço>" );
+        w = MeasureText( message, 20 );
+        DrawText( message, fb->pos.x - w/2 + 2, fb->pos.y + fb->height + 2, 20, BLACK );
+        DrawText( message, fb->pos.x - w/2, fb->pos.y + fb->height, 20, RED );
+        sprintf( message, "ou clique com o mouse para reiniciar!" );
+        w = MeasureText( message, 20 );
+        DrawText( message, fb->pos.x - w/2 + 2, fb->pos.y + fb->height + 22, 20, BLACK );
+        DrawText( message, fb->pos.x - w/2, fb->pos.y + fb->height + 20, 20, RED );
     }
 
 }
@@ -484,7 +616,10 @@ bool flappyBirdVsPipeCoupleIntercept( const FlappyBird *fb, const PipeCouple *pc
 void loadGameResources( void ) {
 
     backgroundTextureLoop = LoadTexture( "resources/backgroundTextureLoop.png" );
-    flappyBirdTexture = LoadTexture( "resources/flappyBirdTexture.png" );
+    flappyBirdTexture1 = LoadTexture( "resources/flappyBirdTexture1.png" );
+    flappyBirdTexture2 = LoadTexture( "resources/flappyBirdTexture2.png" );
+    flappyBirdTexture3 = LoadTexture( "resources/flappyBirdTexture3.png" );
+    flappyBirdBloodTexture = LoadTexture( "resources/flappyBirdBloodTexture.png" );
     groundTextureLoop = LoadTexture( "resources/groundTextureLoop.png" );
     pipeCoupleSliceTexture = LoadTexture( "resources/pipeCoupleSliceTexture.png" );
     pipeCoupleMouthUpTexture = LoadTexture( "resources/pipeCoupleTopUpTexture.png" );
@@ -495,7 +630,10 @@ void loadGameResources( void ) {
 void unloadGameResources( void ) {
 
     UnloadTexture( backgroundTextureLoop );
-    UnloadTexture( flappyBirdTexture );
+    UnloadTexture( flappyBirdTexture1 );
+    UnloadTexture( flappyBirdTexture2 );
+    UnloadTexture( flappyBirdTexture3 );
+    UnloadTexture( flappyBirdBloodTexture );
     UnloadTexture( groundTextureLoop );
     UnloadTexture( pipeCoupleSliceTexture );
     UnloadTexture( pipeCoupleMouthUpTexture );
@@ -507,6 +645,7 @@ void createGameWorld( void ) {
 
     pipeCoupleQuantity = 0;
     collisionDetected = false;
+    upDownCounter = 1;
 
     float w2 = FLAPPY_BIRD_WIDTH / 2;
     float h2 = FLAPPY_BIRD_HEIGHT / 2;
@@ -528,7 +667,15 @@ void createGameWorld( void ) {
         .attackAngle = FLAPPY_BIRD_START_ATTACK_ANGLE,
         .minAttackAngle = FLAPPY_BIRD_MIN_ATTACK_ANGLE,
         .maxAttackAngle = FLAPPY_BIRD_MAX_ATTACK_ANGLE,
-        .texture = &flappyBirdTexture,
+        .frame1Texture = &flappyBirdTexture1,
+        .frame2Texture = &flappyBirdTexture2,
+        .frame3Texture = &flappyBirdTexture3,
+        .currentTexture = &flappyBirdTexture1,
+        .bloodTexture = &flappyBirdBloodTexture,
+        .textureCounter = 0,
+        .maxTextureCounter = 5,
+        .currentTextureFrame = 0,
+        .maxTextureFrame = 2,
         .state = FLAPPY_BIRD_STATE_IDLE,
         .collisionProbes = {
             { .angle = 8, .distance = w2 },
@@ -575,11 +722,24 @@ void createGameWorld( void ) {
         .color = BACKGROUND_COLOR
     };
 
+    score = (Score) {
+        .pos = {
+            .x = 0,
+            .y = SCORE_Y_POSITION
+        },
+        .score = 0,
+        .fontSize = SCORE_FONT_SIZE,
+        .dropShadowDistance = SCORE_DROP_SHADOW_DISTANCE,
+        .frontColor = WHITE,
+        .shadowColor = BLACK
+    };
+
     gw = (GameWorld){
         .fb = &fb,
         .pcs = {0},
         .ground = &ground,
-        .background = &background
+        .background = &background,
+        .score = &score
     };
 
     for ( int i = 0; i < PIPE_COUPLE_START_QUANTITY; i++ ) {
@@ -611,7 +771,8 @@ PipeCouple newPipeCouple( int position ) {
         .verticalGap = PIPE_COUPLE_VERTICAL_GAP,
         .sliceTexture = &pipeCoupleSliceTexture,
         .mouthUpTexture = &pipeCoupleMouthUpTexture,
-        .mouthDownTexture = &pipeCoupleMouthDownTexture
+        .mouthDownTexture = &pipeCoupleMouthDownTexture,
+        .leftBehind = false
     };
 
 }
