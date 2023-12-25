@@ -1,5 +1,5 @@
-flappy bird
 snake
 jump and run
-columns
-asteroids/galaga
+asteroids
+galaga
+campo minado
