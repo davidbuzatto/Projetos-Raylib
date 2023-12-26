@@ -19,7 +19,6 @@ param(
 );
 
 $CurrentFolderName = Split-Path -Path (Get-Location) -Leaf
-#$CompiledFile = "game.exe"
 $CompiledFile = "$CurrentFolderName.exe"
 
 $all = $false
