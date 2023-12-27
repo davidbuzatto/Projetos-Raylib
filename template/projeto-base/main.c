@@ -13,6 +13,7 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <assert.h>
 
 /*---------------------------------------------
  * Library headers.
@@ -119,7 +120,12 @@ void draw( GameWorld *gw ) {
     BeginDrawing();
     ClearBackground( WHITE );
 
-    DrawText( "Basic game template", 100, 100, 40, BLACK );
+    const char *text = "Basic game template";
+    Vector2 m = MeasureTextEx( GetFontDefault(), text, 40, 4 );
+    int x = GetScreenWidth() / 2 - m.x / 2;
+    int y = GetScreenHeight() / 2 - m.y / 2;
+    DrawRectangle( x, y, m.x, m.y, BLACK );
+    DrawText( text, x, y, 40, WHITE );
 
     EndDrawing();
 

@@ -12,6 +12,7 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <assert.h>
 
 #include "include/raylib.h"
 
