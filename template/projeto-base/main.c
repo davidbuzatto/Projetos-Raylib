@@ -62,7 +62,7 @@ void inputAndUpdate( GameWorld *gw );
  * @brief Draws the state of the game.
  * @param gw GameWorld struct pointer.
  */
-void draw( GameWorld *gw );
+void draw( const GameWorld *gw );
 
 /**
  * @brief Create the global Game World object and all of its dependecies.
@@ -135,7 +135,7 @@ void createGameWorld( void ) {
 
     printf( "creating game world...\n" );
 
-    GameWorld gw = {
+    gw = (GameWorld) {
         .dummy = 0
     };
 

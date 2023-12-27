@@ -1,5 +1,4 @@
-snake
-jump and run
 asteroids
 galaga
-campo minado
+snake
+jump and run
