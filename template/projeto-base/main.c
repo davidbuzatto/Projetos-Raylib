@@ -1,7 +1,7 @@
 /**
  * @file main.c
  * @author Prof. Dr. David Buzatto
- * @brief Mais function and logic for the game. Base template for game
+ * @brief Main function and logic for the game. Base template for game
  * development in C using Raylib (https://www.raylib.com/).
  * 
  * @copyright Copyright (c) 2023
