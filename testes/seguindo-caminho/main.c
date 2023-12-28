@@ -48,6 +48,18 @@ typedef struct GameWorld {
  --------------------------------------------*/
 GameWorld gw;
 
+float t = 0;
+float inc = 0.01;
+int xP1 = 100;
+int yP1 = 100;
+int xC2 = 300;
+int yC2 = 100;
+int xC3 = 500;
+int yC3 = 700;
+int xP4 = 700;
+int yP4 = 700;
+bool controlActive = false;
+
 
 /*---------------------------------------------
  * Function prototypes. 
@@ -88,11 +100,11 @@ void unloadResources( void );
 int main( void ) {
 
     const int screenWidth = 800;
-    const int screenHeight = 450;
+    const int screenHeight = 800;
 
     // turn antialiasing on (if possible)
     SetConfigFlags( FLAG_MSAA_4X_HINT );
-    InitWindow( screenWidth, screenHeight, "Window Title" );
+    InitWindow( screenWidth, screenHeight, "Follow the Path!" );
     InitAudioDevice();
     SetTargetFPS( 60 );    
 
@@ -113,6 +125,36 @@ int main( void ) {
 
 void inputAndUpdate( GameWorld *gw ) {
 
+    if ( IsKeyPressed( KEY_C ) ) {
+        controlActive = !controlActive;
+    }
+    
+    if ( IsMouseButtonDown( MOUSE_BUTTON_LEFT ) ) {
+        if ( controlActive || IsKeyDown( KEY_LEFT_CONTROL ) ) {
+            xC2 = GetMouseX();
+            yC2 = GetMouseY();
+        } else {
+            xP1 = GetMouseX();
+            yP1 = GetMouseY();
+        }
+    }
+
+    if ( IsMouseButtonDown( MOUSE_BUTTON_RIGHT ) ) {
+        if ( controlActive || IsKeyDown( KEY_LEFT_CONTROL ) ) {
+            xC3 = GetMouseX();
+            yC3 = GetMouseY();
+        } else {
+            xP4 = GetMouseX();
+            yP4 = GetMouseY();
+        }
+    }
+
+    t += inc;
+    if ( t < 0 || t > 1 ) {
+        inc = -inc;
+        t += inc;
+    }
+
 }
 
 void draw( const GameWorld *gw ) {
@@ -120,12 +162,48 @@ void draw( const GameWorld *gw ) {
     BeginDrawing();
     ClearBackground( WHITE );
 
-    const char *text = "Basic game template";
-    Vector2 m = MeasureTextEx( GetFontDefault(), text, 40, 4 );
-    int x = GetScreenWidth() / 2 - m.x / 2;
-    int y = GetScreenHeight() / 2 - m.y / 2;
-    DrawRectangle( x, y, m.x, m.y, BLACK );
-    DrawText( text, x, y, 40, WHITE );
+    Vector2 p1 = {
+        .x = xP1,
+        .y = yP1
+    };
+
+    Vector2 c2 = {
+        .x = xC2,
+        .y = yC2
+    };
+
+    Vector2 c3 = {
+        .x = xC3,
+        .y = yC3
+    };
+
+    Vector2 p4 = {
+        .x = xP4,
+        .y = yP4
+    };
+
+    DrawCircleV( p1, 4, DARKGRAY );
+    DrawCircleV( c2, 4, DARKGRAY );
+    DrawCircleV( c3, 4, DARKGRAY );
+    DrawCircleV( p4, 4, DARKGRAY );
+
+    DrawSplineSegmentLinear( p1, p4, 2, MAROON );
+    DrawSplineSegmentBasis( p1, c2, c3, p4, 2, DARKBLUE );
+    DrawSplineSegmentCatmullRom( p1, c2, c3, p4, 2, DARKGREEN );
+    DrawSplineSegmentBezierQuadratic( p1, c2, p4, 2, DARKPURPLE );
+    DrawSplineSegmentBezierCubic( p1, c2, c3, p4, 2, ORANGE );
+
+    Vector2 pL = GetSplinePointLinear( p1, p4, t );
+    Vector2 pB = GetSplinePointBasis( p1, c2, c3, p4, t );
+    Vector2 pCR = GetSplinePointCatmullRom( p1, c2, c3, p4, t );
+    Vector2 pBQ = GetSplinePointBezierQuad( p1, c2, p4, t );
+    Vector2 pBC = GetSplinePointBezierCubic( p1, c2, c3, p4, t ); 
+
+    DrawCircleV( pL, 10, RED );
+    DrawCircleV( pB, 10, BLUE );
+    DrawCircleV( pCR, 10, LIME );
+    DrawCircleV( pBQ, 10, VIOLET );
+    DrawCircleV( pBC, 10, GOLD );
 
     EndDrawing();
 
