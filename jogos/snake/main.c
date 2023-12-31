@@ -1,8 +1,7 @@
 /**
  * @file main.c
  * @author Prof. Dr. David Buzatto
- * @brief Main function and logic for the game. Base template for game
- * development in C using Raylib (https://www.raylib.com/).
+ * @brief Snake game using Raylib (https://www.raylib.com/).
  * 
  * @copyright Copyright (c) 2023
  */
@@ -15,18 +14,6 @@
 #include <time.h>
 #include <assert.h>
 
-/*
- * TODO LIST:
- *     - alimentar e contar pontos;
- *           - ao alimentar, aumentar a cobra em uma peça quando
- *             a comida chegar ao fim
- *     - tempo de vida nas comidas
- *     - ajustar frames por segundo (aumentar fps e contar tempo de movimentação)
- *     - aumentar velocidade da cobra quando chegar a determinados pontos
- *       análogo à ideia de níveis
- *     - finalizar jogo ganhando (não sobrar espaço no tabuleiro)
- */
-
 /*---------------------------------------------
  * Library headers.
  --------------------------------------------*/
@@ -35,14 +22,13 @@
 /*---------------------------------------------
  * Project headers.
  --------------------------------------------*/
-#include "include/utils.h"
 
 /*---------------------------------------------
  * Macros. 
  --------------------------------------------*/
 #define BOARD_LINES 18
 #define BOARD_COLUMNS 20
-#define BOARD_MAX_SNAKE_FOOD 1
+#define BOARD_MAX_SNAKE_FOOD 1 // current algorithm only works for one piece
 #define SNAKE_FOOD_QUANTITY 5
 
 
@@ -55,7 +41,7 @@ const Color BOARD_CENTER_COLOR = { 157, 171, 133, 255 };
 const Color BOARD_CELL_COLOR = { 0, 0, 0, 20 };
 const int BOARD_MARGIN = 10;
 
-const Color SNAKE_BODY_COLOR = { 11, 8, 11, 255 };
+const Color SNAKE_BASE_BODY_COLOR = { 11, 8, 11, 255 };
 const Color SNAKE_FOOD_COLORS[SNAKE_FOOD_QUANTITY] = {
     { 133, 53, 48, 255 },
     { 181, 86, 0, 255 },
@@ -88,24 +74,36 @@ typedef enum SnakeDirection {
     SNAKE_GOING_TO_DOWN,
 } SnakeDirection;
 
+typedef struct IntVector2 {
+    int x;
+    int y;
+} IntVector2;
+
+typedef struct SnakeBodyPiece {
+    IntVector2 pos;
+    int cellWidth;
+    Color color;
+} SnakeBodyPiece;
+
 typedef struct Snake {
     int cellWidth;
-    Vector2 body[BOARD_LINES*BOARD_COLUMNS];
+    SnakeBodyPiece body[BOARD_LINES*BOARD_COLUMNS];
     int bodyPieces;
+    IntVector2 growingAt[BOARD_LINES*BOARD_COLUMNS];
+    int growingPieces;
     SnakeDirection direction;
-    Color color;
+    Color baseColor;
 } Snake;
 
 typedef struct SnakeFood {
-    int line;
-    int column;
+    IntVector2 pos;
     int cellWidth;
     Color color;
     int points;
 } SnakeFood;
 
 typedef struct Score {
-    Vector2 pos;
+    IntVector2 pos;
     int width;
     int height;
     int margin;
@@ -136,6 +134,9 @@ Snake snake;
 SnakeFood snakeFood;
 Score score;
 
+// controls growing "queue"
+IntVector2 newBodyPiecePos = { -1, -1 };
+
 
 /*---------------------------------------------
  * Function prototypes. 
@@ -156,6 +157,7 @@ void drawSnake( const Snake *snake, int hOffset, int vOffset );
 void drawSnakeFood( const SnakeFood *snakeFood, int hOffset, int vOffset );
 void drawScore( const Score *score );
 SnakeFood newSnakeFood( void );
+void snakeRecolor( Snake *snake );
 
 /**
  * @brief Create the global Game World object and all of its dependecies.
@@ -206,8 +208,8 @@ int main( void ) {
 void inputAndUpdate( GameWorld *gw ) {
 
     Snake *snake = gw->snake;
-    Vector2 temp = {0};
-    Vector2 previous = {0};
+    Score *score = gw->score;
+    SnakeBodyPiece previous = {0};
 
     if ( gw->state == GAME_STATE_IDLE ) {
         if ( GetKeyPressed() != 0 ) {
@@ -240,46 +242,100 @@ void inputAndUpdate( GameWorld *gw ) {
         }
 
         for ( int i = 0; i < snake->bodyPieces; i++ ) {
-            Vector2 *current = &snake->body[i];
-            Vector2 temp = *current;
+            SnakeBodyPiece *current = &snake->body[i];
+            SnakeBodyPiece temp = *current;
             if ( i == 0 ) {
                 switch ( snake->direction ) {
                     case SNAKE_GOING_TO_LEFT:
-                        current->x--;
+                        current->pos.x--;
                         break;
                     case SNAKE_GOING_TO_RIGHT:
-                        current->x++;
+                        current->pos.x++;
                         break;
                     case SNAKE_GOING_TO_UP:
-                        current->y--;
+                        current->pos.y--;
                         break;
                     case SNAKE_GOING_TO_DOWN:
-                        current->y++;
+                        current->pos.y++;
                         break;
                 }
-                if ( current->x < 0 ) {
-                    current->x = gw->columns-1;
+                if ( current->pos.x < 0 ) {
+                    current->pos.x = gw->columns-1;
                 }
-                if ( current->y < 0 ) {
-                    current->y = gw->lines-1;
+                if ( current->pos.y < 0 ) {
+                    current->pos.y = gw->lines-1;
                 }
-                current->x = ( (int) current->x ) % gw->columns;
-                current->y = ( (int) current->y ) % gw->lines;
+                current->pos.x = current->pos.x % gw->columns;
+                current->pos.y = current->pos.y % gw->lines;
             } else {
-                current->x = previous.x;
-                current->y = previous.y;
+                current->pos.x = previous.pos.x;
+                current->pos.y = previous.pos.y;
             }
             previous = temp;
         }
 
+        // grow it
+        if ( newBodyPiecePos.x != -1 ) {
+            snake->body[snake->bodyPieces++] = (SnakeBodyPiece) {
+                .pos = {
+                    .x = newBodyPiecePos.x,
+                    .y = newBodyPiecePos.y,
+                },
+                .cellWidth = snake->cellWidth,
+                .color = WHITE
+            };
+            snake->growingPieces--;
+            gw->snakeFoodQuantity--;
+            newBodyPiecePos = (IntVector2) {
+                .x = -1,
+                .y = -1,
+            };
+            gw->snakeFood[gw->snakeFoodQuantity++] = newSnakeFood();
+            snakeRecolor( snake );
+        }
+
         // bite itself
-        Vector2 *head = &snake->body[0];
+        SnakeBodyPiece *head = &snake->body[0];
+        SnakeBodyPiece *tail = &snake->body[snake->bodyPieces-1];
+
         for ( int i = 1; i < snake->bodyPieces; i++ ) {
-            if ( head->x == snake->body[i].x &&
-                 head->y == snake->body[i].y ) {
+            if ( head->pos.x == snake->body[i].pos.x &&
+                 head->pos.y == snake->body[i].pos.y ) {
                 gw->state = GAME_STATE_LOSE;
             }
         }
+
+        // feeding
+        for ( int i = 0; i < gw->snakeFoodQuantity; i++ ) {
+            if ( head->pos.x == gw->snakeFood[i].pos.x && 
+                 head->pos.y == gw->snakeFood[i].pos.y ) {
+                snake->growingAt[snake->growingPieces++] = gw->snakeFood[i].pos;
+                score->points += gw->snakeFood[i].points;
+                if ( snake->bodyPieces == gw->lines * gw->columns - 1 ) {
+                    gw->state = GAME_STATE_WON;
+                }
+            }
+        }
+
+        // needs to grow?
+        for ( int i = 0; i < snake->growingPieces; i++ ) {
+            bool needToGrow = false;
+            if ( tail->pos.x == snake->growingAt[i].x && 
+                 tail->pos.y == snake->growingAt[i].y ) {
+                newBodyPiecePos = (IntVector2) {
+                    .x = tail->pos.x,
+                    .y = tail->pos.y,
+                };
+                needToGrow = true;
+            }
+            if ( !needToGrow ) {
+                newBodyPiecePos = (IntVector2) {
+                    .x = -1,
+                    .y = -1,
+                };
+            }
+        }
+
 
     }
 
@@ -331,10 +387,10 @@ void draw( const GameWorld *gw ) {
         }
     }
 
-    drawSnake( gw->snake, hOffset, vOffset );
     for ( int i = 0; i < gw->snakeFoodQuantity; i++ ) {
         drawSnakeFood( &gw->snakeFood[i], hOffset, vOffset );
     }
+    drawSnake( gw->snake, hOffset, vOffset );
     drawScore( gw->score );
 
     if ( gw->state != GAME_STATE_PLAYING ) {
@@ -380,25 +436,25 @@ void drawSnake( const Snake *snake, int hOffset, int vOffset ) {
 
     for ( int i = snake->bodyPieces-1; i >=0; i-- ) {
         
-        const Vector2 *c = &snake->body[i];
+        const SnakeBodyPiece *c = &snake->body[i];
 
         DrawRectangleLinesEx( 
             (Rectangle){
-                .x = c->x * snake->cellWidth + 2 + hOffset,
-                .y = c->y * snake->cellWidth + 2 + vOffset,
-                .width = snake->cellWidth - 2,
-                .height = snake->cellWidth - 2
+                .x = c->pos.x * c->cellWidth + 2 + hOffset,
+                .y = c->pos.y * c->cellWidth + 2 + vOffset,
+                .width = c->cellWidth - 2,
+                .height = c->cellWidth - 2
             },
             2,
-            snake->color
+            c->color
         );
 
         DrawRectangle(  
-            c->x * snake->cellWidth + 6 + hOffset,
-            c->y * snake->cellWidth + 6 + vOffset,
-            snake->cellWidth - 10,
-            snake->cellWidth - 10,
-            snake->color
+            c->pos.x * c->cellWidth + 6 + hOffset,
+            c->pos.y * c->cellWidth + 6 + vOffset,
+            c->cellWidth - 10,
+            c->cellWidth - 10,
+            c->color
         );
 
     }
@@ -409,8 +465,8 @@ void drawSnakeFood( const SnakeFood *snakeFood, int hOffset, int vOffset ) {
 
     DrawRectangleLinesEx( 
         (Rectangle){
-            .x = snakeFood->column * snakeFood->cellWidth + 2 + hOffset,
-            .y = snakeFood->line * snakeFood->cellWidth + 2 + vOffset,
+            .x = snakeFood->pos.x * snakeFood->cellWidth + 2 + hOffset,
+            .y = snakeFood->pos.y * snakeFood->cellWidth + 2 + vOffset,
             .width = snakeFood->cellWidth - 2,
             .height = snakeFood->cellWidth - 2
         },
@@ -419,8 +475,8 @@ void drawSnakeFood( const SnakeFood *snakeFood, int hOffset, int vOffset ) {
     );
 
     DrawRectangle(  
-        snakeFood->column * snakeFood->cellWidth + 6 + hOffset,
-        snakeFood->line * snakeFood->cellWidth + 6 + vOffset,
+        snakeFood->pos.x * snakeFood->cellWidth + 6 + hOffset,
+        snakeFood->pos.y * snakeFood->cellWidth + 6 + vOffset,
         snakeFood->cellWidth - 10,
         snakeFood->cellWidth - 10,
         snakeFood->color
@@ -438,12 +494,25 @@ SnakeFood newSnakeFood( void ) {
     int p = GetRandomValue( 0, SNAKE_FOOD_QUANTITY-1 );
 
     return (SnakeFood) {
-        .line = GetRandomValue( 0, BOARD_LINES-1 ),
-        .column = GetRandomValue( 0, BOARD_COLUMNS-1 ),
+        .pos = { 
+            .x = GetRandomValue( 0, BOARD_COLUMNS-1 ), // possible food/snake overlap
+            .y = GetRandomValue( 0, BOARD_LINES-1 )    // possible food/snake overlap
+        },
         .cellWidth = BOARD_CELL_WIDTH,
         .color = SNAKE_FOOD_COLORS[p],
         .points = SNAKE_FOOD_POINTS[p],
     };
+
+}
+
+void snakeRecolor( Snake *snake ) {
+
+    float min = 0.4;
+    float part = ( 1.0 - min ) / snake->bodyPieces;
+
+    for ( int i = 0; i < snake->bodyPieces; i++ ) {
+        snake->body[i].color = Fade( snake->baseColor, 1.0 - i * part );
+    }
 
 }
 
@@ -455,16 +524,11 @@ void createGameWorld( void ) {
         .cellWidth = BOARD_CELL_WIDTH,
         .body = {0},
         .bodyPieces = 0,
+        .growingAt = {0},
+        .growingPieces = 0,
         .direction = SNAKE_GOING_TO_RIGHT,
-        .color = SNAKE_BODY_COLOR
+        .baseColor = SNAKE_BASE_BODY_COLOR
     };
-
-    for ( int i = 0; i < 8; i++ ) {
-        snake.body[snake.bodyPieces++] = (Vector2){ 
-            .x = BOARD_COLUMNS / 2 - i, 
-            .y = BOARD_LINES / 2 - 1
-        };
-    }
 
     score = (Score) {
         .pos = {
@@ -495,6 +559,50 @@ void createGameWorld( void ) {
     for ( int i = 0; i < BOARD_MAX_SNAKE_FOOD; i++ ) {
         gw.snakeFood[gw.snakeFoodQuantity++] = newSnakeFood();
     }
+
+    /* WON test
+    int t = 0;
+    int k = 0;
+    int inc = 1;
+    for ( int i = 0; i < gw.lines; i++ ) {
+        for ( int j = 0; j < gw.columns; j++ ) {
+            snake.body[snake.bodyPieces++] = (SnakeBodyPiece) { 
+                .pos = {
+                    .x = k, 
+                    .y = i
+                },
+                .cellWidth = snake.cellWidth,
+                .color = snake.baseColor
+            };
+            k += inc;
+            if ( k == gw.columns ) {
+                k--;
+                inc = -inc;
+            } else if ( k == -1 ) {
+                k++;
+                inc = -inc;
+            }
+            t++;
+            if ( t == gw.lines * gw.columns - 1 ) {
+                break;
+            }
+        }
+    }
+    snake.direction = SNAKE_GOING_TO_UP;
+    gw.snakeFood[gw.snakeFoodQuantity-1].pos.x = 0;
+    gw.snakeFood[gw.snakeFoodQuantity-1].pos.y = gw.lines-1;*/
+
+    for ( int i = 0; i < 8; i++ ) {
+        snake.body[snake.bodyPieces++] = (SnakeBodyPiece) { 
+            .pos = {
+                .x = BOARD_COLUMNS / 2 - i, 
+                .y = BOARD_LINES / 2 - 1
+            },
+            .cellWidth = snake.cellWidth,
+            .color = snake.baseColor
+        };
+    }
+    snakeRecolor( &snake );
 
 }
 
