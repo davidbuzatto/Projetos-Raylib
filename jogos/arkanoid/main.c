@@ -27,24 +27,86 @@
 /*---------------------------------------------
  * Macros. 
  --------------------------------------------*/
-
+#define TARGET_HORIZONTAL_MAX_QUANTITY 11
+#define TARGET_VERTICAL_MAX_QUANTITY 22
 
 /*--------------------------------------------
  * Constants. 
  -------------------------------------------*/
+const int TARGET_WIDTH = 64;
+const int TARGET_HEIGHT = 32;
+const int PLAYER_AREA_HEIGHT = 160; // 5 targets
 
+const int PLAYER_WIDTH = 128;
+const int PLAYER_HEIGHT = 32;
+const int BALL_RADIUS = 10;
+
+const int GAME_STATUS_WIDTH = 224;
+
+const int ARENA_MARGIN = 32;
+
+const Color TARGET_COLORS[6] = {
+    { 162, 160, 162, 255 },
+    { 226, 57, 0, 255 },
+    { 0, 84, 246, 255 },
+    { 255, 149, 1, 255 },
+    { 255, 119, 145, 255 },
+    { 116, 183, 9, 255 },
+};
 
 /*---------------------------------------------
  * Custom types (enums, structs, unions etc.)
  --------------------------------------------*/
+typedef struct Player {
+    Rectangle rec;
+    Vector2 vel;
+    Color color;
+} Player;
+
+typedef struct Target {
+    Rectangle rec;
+    Color color;
+} Target;
+
+typedef struct Ball {
+    Vector2 pos;
+    Vector2 vel;
+    int radius;
+    Color color;
+} Ball;
+
+typedef struct Arena {
+    Rectangle rec;
+    Rectangle battleField;
+    Player *player;
+    Target targets[TARGET_VERTICAL_MAX_QUANTITY][TARGET_HORIZONTAL_MAX_QUANTITY];
+    int targetLines;
+    int targetColumns;
+    Ball *ball;
+    Color color;
+    Color battleFieldColor;
+} Arena;
+
+typedef struct Score {
+    int score;
+    int lives;
+    int round;
+} Score;
+
 typedef struct GameWorld {
-    int dummy;
+    Arena *arena;
+    Score *score;
 } GameWorld;
 
 
 /*---------------------------------------------
  * Global variables.
  --------------------------------------------*/
+Player player;
+Target target;
+Ball ball;
+Arena arena;
+Score score;
 GameWorld gw;
 
 
@@ -62,6 +124,11 @@ void inputAndUpdate( GameWorld *gw );
  * @param gw GameWorld struct pointer.
  */
 void draw( const GameWorld *gw );
+
+void drawArena( const Arena *arena );
+void drawPlayer( const Player *player );
+void drawTarget( const Target *target );
+void drawBall( const Ball *ball );
 
 /**
  * @brief Create the global Game World object and all of its dependecies.
@@ -86,12 +153,12 @@ void unloadResources( void );
 
 int main( void ) {
 
-    const int screenWidth = 800;
-    const int screenHeight = 450;
+    const int screenWidth = ARENA_MARGIN + TARGET_WIDTH * TARGET_HORIZONTAL_MAX_QUANTITY + ARENA_MARGIN + GAME_STATUS_WIDTH;
+    const int screenHeight = ARENA_MARGIN + TARGET_HEIGHT * TARGET_VERTICAL_MAX_QUANTITY;
 
     // turn antialiasing on (if possible)
     SetConfigFlags( FLAG_MSAA_4X_HINT );
-    InitWindow( screenWidth, screenHeight, "Window Title" );
+    InitWindow( screenWidth, screenHeight, "Arkanoid" );
     InitAudioDevice();
     SetTargetFPS( 60 );
 
@@ -117,25 +184,118 @@ void inputAndUpdate( GameWorld *gw ) {
 void draw( const GameWorld *gw ) {
 
     BeginDrawing();
-    ClearBackground( WHITE );
+    ClearBackground( BLACK );
 
-    const char *text = "Basic game template";
-    Vector2 m = MeasureTextEx( GetFontDefault(), text, 40, 4 );
-    int x = GetScreenWidth() / 2 - m.x / 2;
-    int y = GetScreenHeight() / 2 - m.y / 2;
-    DrawRectangle( x, y, m.x, m.y, BLACK );
-    DrawText( text, x, y, 40, WHITE );
+    drawArena( gw->arena );
 
     EndDrawing();
 
 }
 
+void drawArena( const Arena *arena ) {
+    DrawRectangleRec( arena->rec, arena->color );
+    DrawRectangleRec( arena->battleField, arena->battleFieldColor );
+    for ( int i = 0; i < arena->targetLines; i++ ) {
+        for ( int j = 0; j < arena->targetColumns; j++ ) {
+            drawTarget( &arena->targets[i][j] );
+        }
+    }
+    drawPlayer( arena->player );
+    drawBall( arena->ball );
+}
+
+void drawPlayer( const Player *player ) {
+    DrawRectangleRec( player->rec, player->color );
+}
+
+void drawTarget( const Target *target ) {
+    DrawRectangleRec( target->rec, BLACK );
+    DrawRectangle( target->rec.x, target->rec.y, target->rec.width - 4, target->rec.height - 4, target->color );
+}
+
+void drawBall( const Ball *ball ) {
+    DrawCircle( ball->pos.x, ball->pos.y, ball->radius, ball->color );
+}
+
 void createGameWorld( void ) {
 
-    printf( "creating game world...\n" );
+    int arenaWidth = TARGET_WIDTH * TARGET_HORIZONTAL_MAX_QUANTITY;
+    int arenaHeight = TARGET_HEIGHT * TARGET_VERTICAL_MAX_QUANTITY;
+    int vOffsetTargets = 4 * TARGET_HEIGHT;
+
+    arena = (Arena) {
+        .rec = {
+            .x = 0,
+            .y = 0,
+            .width = arenaWidth + ARENA_MARGIN * 2,
+            .height = arenaHeight + ARENA_MARGIN
+        },
+        .battleField = {
+            .x = ARENA_MARGIN,
+            .y = ARENA_MARGIN,
+            .width = arenaWidth,
+            .height = arenaHeight
+        },
+        .targets = {0},
+        .targetLines = 6,
+        .targetColumns = 11,
+        .color = GRAY,
+        .battleFieldColor = BLACK
+    };
+
+    player = (Player) {
+        .rec = {
+            .x = arena.battleField.x + arena.battleField.width / 2 - PLAYER_WIDTH / 2,
+            .y = arena.battleField.height - PLAYER_AREA_HEIGHT + PLAYER_HEIGHT,
+            .width = PLAYER_WIDTH,
+            .height = PLAYER_HEIGHT
+        },
+        .vel = {
+            .x = 1,
+            .y = 0
+        },
+        .color = DARKGRAY
+    };
+
+    ball = (Ball) {
+        .pos = {
+            .x = arena.battleField.x + arena.battleField.width / 2,
+            .y = player.rec.y - BALL_RADIUS
+        },
+        .vel = {
+            .x = 1,
+            .y = 1
+        },
+        .radius = BALL_RADIUS,
+        .color = ORANGE
+    };
+    
+    arena.player = &player;
+    arena.ball = &ball;
+
+    for ( int i = 0; i < arena.targetLines; i++ ) {
+        for ( int j = 0; j < arena.targetColumns; j++ ) {
+            arena.targets[i][j] = (Target) {
+                .rec = {
+                    .x = arena.battleField.x + j * TARGET_WIDTH,
+                    .y = vOffsetTargets + arena.battleField.y + i * TARGET_HEIGHT,
+                    .width = TARGET_WIDTH,
+                    .height = TARGET_HEIGHT
+                },
+                .color = TARGET_COLORS[i]
+            };
+        }
+    }
+
+    score = (Score) {
+        .score = 0,
+        .lives = 3,
+        .round = 1
+    };
 
     gw = (GameWorld) {
-        .dummy = 0
+        .arena = &arena,
+        .score = &score
     };
 
 }
