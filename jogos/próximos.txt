@@ -1,3 +1,2 @@
-snake
 arkanoid
 pacman

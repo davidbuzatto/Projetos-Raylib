@@ -1,10 +1,9 @@
 /**
  * @file main.c
  * @author Prof. Dr. David Buzatto
- * @brief Main function and logic for the game. Base template for game
- * development in C using Raylib (https://www.raylib.com/).
+ * @brief Arkanoid game in C using Raylib (https://www.raylib.com/).
  * 
- * @copyright Copyright (c) 2023
+ * @copyright Copyright (c) 2024
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,12 +17,12 @@
 /*---------------------------------------------
  * Library headers.
  --------------------------------------------*/
-#include "include/raylib.h"
+#include <raylib.h>
 
 /*---------------------------------------------
  * Project headers.
  --------------------------------------------*/
-#include "include/utils.h"
+#include <utils.h>
 
 /*---------------------------------------------
  * Macros. 
@@ -94,7 +93,7 @@ int main( void ) {
     SetConfigFlags( FLAG_MSAA_4X_HINT );
     InitWindow( screenWidth, screenHeight, "Window Title" );
     InitAudioDevice();
-    SetTargetFPS( 60 );    
+    SetTargetFPS( 60 );
 
     loadResources();
     createGameWorld();

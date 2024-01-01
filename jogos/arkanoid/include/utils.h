@@ -3,7 +3,7 @@
  * @author Prof. Dr. David Buzatto
  * @brief Utilitary functions and constants declarations.
  * 
- * @copyright Copyright (c) 2023
+ * @copyright Copyright (c) 2024
  */
 #pragma once
 
