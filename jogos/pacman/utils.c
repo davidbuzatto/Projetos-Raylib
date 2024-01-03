@@ -3,7 +3,7 @@
  * @author Prof. Dr. David Buzatto
  * @brief Utilitary functions implementation.
  * 
- * @copyright Copyright (c) 2023
+ * @copyright Copyright (c) 2024
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,7 +14,9 @@
 #include <time.h>
 #include <assert.h>
 
-#include "include/raylib.h"
+#include <raylib.h>
+
+#include <utils.h>
 
 double toRadians( double degrees ) {
     return degrees * PI / 180.0;

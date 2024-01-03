@@ -1,10 +1,9 @@
 /**
  * @file main.c
  * @author Prof. Dr. David Buzatto
- * @brief Main function and logic for the game. Base template for game
- * development in C using Raylib (https://www.raylib.com/).
+ * @brief Pacman in C using Raylib (https://www.raylib.com/).
  * 
- * @copyright Copyright (c) 2023
+ * @copyright Copyright (c) 2024
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,12 +17,12 @@
 /*---------------------------------------------
  * Library headers.
  --------------------------------------------*/
-#include "include/raylib.h"
+#include <raylib.h>
 
 /*---------------------------------------------
  * Project headers.
  --------------------------------------------*/
-#include "include/utils.h"
+#include <utils.h>
 
 /*---------------------------------------------
  * Macros. 
@@ -38,8 +37,19 @@
 /*---------------------------------------------
  * Custom types (enums, structs, unions etc.)
  --------------------------------------------*/
+typedef struct Point2 {
+    int x;
+    int y;
+} Point2;
+
+typedef struct Map {
+    int graph[100][4];
+    Point2 vertices[100];
+    int verticesQuantity;
+} Map;
+
 typedef struct GameWorld {
-    int dummy;
+    Map *map;
 } GameWorld;
 
 
@@ -47,6 +57,7 @@ typedef struct GameWorld {
  * Global variables.
  --------------------------------------------*/
 GameWorld gw;
+Map map;
 
 
 /*---------------------------------------------
@@ -63,6 +74,9 @@ void inputAndUpdate( GameWorld *gw );
  * @param gw GameWorld struct pointer.
  */
 void draw( const GameWorld *gw );
+
+void parseMapFile( const char *mapPath, Map *map );
+void drawMap( const Map *map );
 
 /**
  * @brief Create the global Game World object and all of its dependecies.
@@ -88,11 +102,11 @@ void unloadResources( void );
 int main( void ) {
 
     const int screenWidth = 800;
-    const int screenHeight = 450;
+    const int screenHeight = 800;
 
     // turn antialiasing on (if possible)
     SetConfigFlags( FLAG_MSAA_4X_HINT );
-    InitWindow( screenWidth, screenHeight, "Window Title" );
+    InitWindow( screenWidth, screenHeight, "Pacman" );
     InitAudioDevice();
     SetTargetFPS( 60 );    
 
@@ -120,14 +134,53 @@ void draw( const GameWorld *gw ) {
     BeginDrawing();
     ClearBackground( WHITE );
 
-    const char *text = "Basic game template";
-    Vector2 m = MeasureTextEx( GetFontDefault(), text, 40, 4 );
-    int x = GetScreenWidth() / 2 - m.x / 2;
-    int y = GetScreenHeight() / 2 - m.y / 2;
-    DrawRectangle( x, y, m.x, m.y, BLACK );
-    DrawText( text, x, y, 40, WHITE );
+    drawMap( gw->map );
 
     EndDrawing();
+
+}
+
+void drawMap( const Map *map ) {
+
+    for ( int i = 0; i < map->verticesQuantity; i++ ) {
+        const Point2 *p = &map->vertices[i];
+        DrawCircle( 20 + p->x * 20, 20 + p->y * 20, 5, GREEN );
+    }
+
+}
+
+void parseMapFile( const char *mapPath, Map *map ) {
+
+    char *data = LoadFileText( mapPath );
+    int currentLine = 0;
+    int currentColumn = 0;
+
+    while ( *data != '\0' ) {
+
+        char c = *data;
+
+        if ( c == '\n' ) {
+            currentLine++;
+            currentColumn = 0;
+        } else {
+            if ( c == 'v' ) {
+                map->vertices[map->verticesQuantity++] = (Point2) {
+                    .x = currentColumn,
+                    .y = currentLine
+                };
+            }
+            currentColumn++;
+        }
+
+        data++;
+
+    }
+
+    for ( int i = 0; i < map->verticesQuantity; i++ ) {
+        Point2 *p = &map->vertices[i];
+        int line = p->y;
+        int column = p->x;
+    }
 
 }
 
@@ -135,8 +188,16 @@ void createGameWorld( void ) {
 
     printf( "creating game world...\n" );
 
+    map = (Map) {
+        .graph = {0},
+        .vertices = {0},
+        .verticesQuantity = 0
+    };
+
+    parseMapFile( "resources/map.txt", &map );
+
     gw = (GameWorld) {
-        .dummy = 0
+        .map = &map
     };
 
 }
