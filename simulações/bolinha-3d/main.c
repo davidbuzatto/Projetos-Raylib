@@ -229,20 +229,16 @@ void draw( const GameWorld *gw ) {
 
     BeginDrawing();
     ClearBackground( WHITE );
-
     BeginMode3D( *(gw->camera) );
 
     DrawGrid( 100, 1.0f );
     DrawPlane( (Vector3){ 0, 0, 0 }, (Vector2){ gw->cube->width, gw->cube->length }, DARKBLUE );
-
     for ( int i = 0; i < gw->ballQuantity; i++ ) {
         drawBall( &gw->balls[i] );
     }
-
     drawCube( gw->cube );
 
     EndMode3D();
-
     EndDrawing();
 
 }
