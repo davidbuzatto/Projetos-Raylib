@@ -1,6 +1,6 @@
 # Projetos Raylib
 
-Coletânea de projetos escritos em C e Raylib para aprendizado e aplicação em aula.
+Coletânea de templates e projetos de exemplo escritos em C e C++ usando a engine de jogos Raylib, visando aprendizado e aplicação em aula.
 
 ## Autor
 
