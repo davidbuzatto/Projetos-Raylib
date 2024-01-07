@@ -205,8 +205,8 @@ int main( void ) {
         inputAndUpdate( &gw );
         draw( &gw );
     }
-    destroyGameWorld();
     unloadGameResources();
+    destroyGameWorld();
 
     //CloseAudioDevice();
     CloseWindow();

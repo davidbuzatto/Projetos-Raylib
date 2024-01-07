@@ -102,8 +102,8 @@ int main( void ) {
         inputAndUpdate( &gw );
         draw( &gw );
     }
-    destroyGameWorld();
     unloadResources();
+    destroyGameWorld();
 
     CloseAudioDevice();
     CloseWindow();
