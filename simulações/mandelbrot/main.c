@@ -246,13 +246,14 @@ void draw( void ) {
     for ( int i = 0; i < GetScreenHeight(); i++ ) {
         for ( int j = 0; j < GetScreenWidth(); j++ ) {
 
-            double px = j;
+            // naive
+            /*double px = j;
             double py = i;
             double x = 0.0;
             double y = 0.0;
 
-            /*double x0 = Lerp( minX, maxX, ( (double) j / (GetScreenWidth()-1) ) );
-            double y0 = Lerp( minY, maxY, ( (double) i / (GetScreenHeight()-1) ) );*/
+            //double x0 = Lerp( minX, maxX, ( (double) j / (GetScreenWidth()-1) ) );
+            //double y0 = Lerp( minY, maxY, ( (double) i / (GetScreenHeight()-1) ) );
             double x0 = Lerp( minX, maxX, ( px / GetScreenWidth() ) );
             double y0 = Lerp( minY, maxY, ( py / GetScreenHeight() ) );
             
@@ -261,16 +262,123 @@ void draw( void ) {
                 double xt = x * x - y * y + x0;
                 y = 2 * x * y + y0;
                 x = xt;
+            }*/
+
+            // optimization 1
+            /*double px = j;
+            double py = i;
+            double x = 0.0;
+            double y = 0.0;
+            double x0 = Lerp( minX, maxX, ( px / GetScreenWidth() ) );
+            double y0 = Lerp( minY, maxY, ( py / GetScreenHeight() ) );
+            double x2 = 0.0;
+            double y2 = 0.0;
+            double w = 0;
+            
+            int k;
+            for ( k = 0; k < maxIterations && x2 + y2 <= 4.0; k++ ) {
+                x = x2 - y2 + x0;
+                y = w - x2 - y2 + y0;
+                x2 = x * x;
+                y2 = y * y;
+                w = ( x + y ) * ( x + y );
+            }*/
+
+            // optimization 2
+            /*double px = j;
+            double py = i;
+            double x = 0.0;
+            double y = 0.0;
+            double x0 = Lerp( minX, maxX, ( px / GetScreenWidth() ) );
+            double y0 = Lerp( minY, maxY, ( py / GetScreenHeight() ) );
+            double x2 = 0.0;
+            double y2 = 0.0;
+            
+            int k;
+            for ( k = 0; k < maxIterations && x2 + y2 <= 4.0; k++ ) {
+                y = 2 * x * y + y0;
+                x = x2 - y2 + x0;
+                x2 = x * x;
+                y2 = y * y;
+            }*/
+
+            // colorizing
+            double px = j;
+            double py = i;
+            double x = 0.0;
+            double y = 0.0;
+            double x0 = Lerp( minX, maxX, ( px / GetScreenWidth() ) );
+            double y0 = Lerp( minY, maxY, ( py / GetScreenHeight() ) );
+            
+            int k;
+            for ( k = 0; k < maxIterations && x*x + y*y <= ( 1 << 16 ); k++ ) {
+                double xt =  x * x - y * y + x0;
+                y = 2 * x * y + y0;
+                x = xt;
             }
 
             if ( colored ) {
+
+                /*float diff = 0;
+                if ( k < maxIterations ) {
+                    double logZn = log( x * x + y * y ) / 2;
+                    double nu = log( logZn / log(2) ) / log(2);
+                    diff = k - 1 - nu;
+                }
+                
+                //Color color1 = ColorFromHSV( 
+                //        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) k) / (float) maxIterations ), 1, 0.7 );
+                //Color color2 = ColorFromHSV( 
+                //        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) (k+1)) / (float) maxIterations ), 1, 0.7 );
+
+                //Color color1 = ColorFromHSV( 
+                //        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) diff) / (float) maxIterations ), 1, 0.7 );
+                //Color color2 = ColorFromHSV( 
+                //        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) (k+1)) / (float) maxIterations ), 1, 0.7 );
+
+                //Color color1 = ColorFromHSV( 
+                //        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) k) / (float) maxIterations ), 1, 0.7 );
+                //Color color2 = ColorFromHSV( 
+                //        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) (diff+1)) / (float) maxIterations ), 1, 0.7 );
+
+                Color color1 = ColorFromHSV( 
+                        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) diff) / (float) maxIterations ), 1, 0.7 );
+                Color color2 = ColorFromHSV( 
+                        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) (diff+1)) / (float) maxIterations ), 1, 0.7 );
+
+                diff = diff - ((long)diff);
+
+                color = (Color) {
+                    .r = Lerp( color1.r, color2.r, diff ),
+                    .g = Lerp( color1.g, color2.g, diff ),
+                    .b = Lerp( color1.b, color2.b, diff ),
+                    .a = 255
+                };*/
+
                 color = ColorFromHSV( 
                     hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( k / (float) maxIterations ), 1, 0.7 );
+
             } else {
+
+                /*float diff = 0;
+                if ( k < maxIterations ) {
+                    double logZn = log( x * x + y * y ) / 2;
+                    double nu = log( logZn / log(2) ) / log(2);
+                    diff = k - 1 - nu;
+                }
+                
+                float c1 = 255 * (diff) / ( (float) maxIterations );
+                float c2 = 255 * (diff+1) / ( (float) maxIterations );
+                diff = diff - ((long)diff);
+
+                int c = 255 - Lerp( c1, c2, diff );*/
+
                 int c = 255 - 255 * ( k / (float) maxIterations );
+
                 color.r = c;
                 color.g = c;
                 color.b = c;
+
             }
 
             DrawPixel( px, py, color );
@@ -291,6 +399,7 @@ void draw( void ) {
         drawColorBar( &colorBar );
     }
 
+    DrawFPS( 20, GetScreenHeight() - 40 );
     EndDrawing();
 
 }
