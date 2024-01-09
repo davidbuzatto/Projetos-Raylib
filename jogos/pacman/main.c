@@ -105,6 +105,7 @@ void addMapGraphEdge( int v, int w, int d, Map *map );
 
 void drawMap( const Map *map );
 void drawPlayer( const Player *player );
+void turnPlayer( Player *player );
 
 /**
  * @brief Create the global Game World object and all of its dependecies.
@@ -157,33 +158,155 @@ void inputAndUpdate( GameWorld *gw ) {
 
     Player *player = gw->player;
     Map *map = gw->map;
+    int nextTarget = -1;
 
-    if ( IsKeyPressed( KEY_RIGHT ) ) {
-        player->direction = PLAYER_DIRECTION_GOING_TO_RIGHT;
-        player->vel.x = player->speed;
-        player->vel.y = 0;
-        player->moving = true;
-    } else if ( IsKeyPressed( KEY_DOWN ) ) {
-        player->direction = PLAYER_DIRECTION_GOING_TO_DOWN;
-        player->vel.x = 0;
-        player->vel.y = player->speed;
-        player->moving = true;
-    } else if ( IsKeyPressed( KEY_LEFT ) ) {
-        player->direction = PLAYER_DIRECTION_GOING_TO_LEFT;
-        player->vel.x = -player->speed;
-        player->vel.y = 0;
-        player->moving = true;
-    } else if ( IsKeyPressed( KEY_UP ) ) {
-        player->direction = PLAYER_DIRECTION_GOING_TO_UP;
-        player->vel.x = 0;
-        player->vel.y = -player->speed;
-        player->moving = true;
+    /*if ( GetKeyPressed() != 0 ) {
+        printf( "vel: %d %d\n", player->vel.x, player->vel.y );
+    }*/
+
+    if ( IsKeyDown( KEY_RIGHT ) ) {
+        if ( !player->moving ) {
+            player->direction = PLAYER_DIRECTION_GOING_TO_RIGHT;
+            player->vel.x = player->speed;
+            player->vel.y = 0;
+            player->moving = true;
+            nextTarget = gw->map->graph[player->currentVertex][0];
+        } else if ( player->direction == PLAYER_DIRECTION_GOING_TO_LEFT ) {
+            player->direction = PLAYER_DIRECTION_GOING_TO_RIGHT;
+            player->vel.x = player->speed;
+            player->vel.y = 0;
+            player->moving = true;
+            nextTarget = player->currentVertex;
+            player->currentVertex = player->targetVertex;
+        }
+    } else if ( IsKeyDown( KEY_DOWN ) ) {
+        if ( !player->moving ) {
+            player->direction = PLAYER_DIRECTION_GOING_TO_DOWN;
+            player->vel.x = 0;
+            player->vel.y = player->speed;
+            player->moving = true;
+            nextTarget = gw->map->graph[player->currentVertex][1];
+        } else if ( player->direction == PLAYER_DIRECTION_GOING_TO_UP ) {
+            player->direction = PLAYER_DIRECTION_GOING_TO_DOWN;
+            player->vel.x = 0;
+            player->vel.y = player->speed;
+            player->moving = true;
+            nextTarget = player->currentVertex;
+            player->currentVertex = player->targetVertex;
+        }
+    } else if ( IsKeyDown( KEY_LEFT ) ) {
+        if ( !player->moving ) {
+            player->direction = PLAYER_DIRECTION_GOING_TO_LEFT;
+            player->vel.x = -player->speed;
+            player->vel.y = 0;
+            player->moving = true;
+            nextTarget = gw->map->graph[player->currentVertex][2];
+        } else if ( player->direction == PLAYER_DIRECTION_GOING_TO_RIGHT ) {
+            player->direction = PLAYER_DIRECTION_GOING_TO_LEFT;
+            player->vel.x = -player->speed;
+            player->vel.y = 0;
+            player->moving = true;
+            nextTarget = player->currentVertex;
+            player->currentVertex = player->targetVertex;
+        }
+    } else if ( IsKeyDown( KEY_UP ) ) {
+        if ( !player->moving ) {
+            player->direction = PLAYER_DIRECTION_GOING_TO_UP;
+            player->vel.x = 0;
+            player->vel.y = -player->speed;
+            player->moving = true;
+            nextTarget  = gw->map->graph[player->currentVertex][3];
+        } else if ( player->direction == PLAYER_DIRECTION_GOING_TO_DOWN ) {
+            player->direction = PLAYER_DIRECTION_GOING_TO_UP;
+            player->vel.x = 0;
+            player->vel.y = -player->speed;
+            player->moving = true;
+            nextTarget = player->currentVertex;
+            player->currentVertex = player->targetVertex;
+        }
+    }
+
+    turnPlayer( player );
+
+    if ( nextTarget != -1 ) {
+        player->targetVertex = nextTarget;
     }
 
     // vertex resolution
-    if ( player->moving ) {
+    if ( player->moving && player->targetVertex != -1 ) {
+
+        int targetVertex = player->targetVertex;
+        Point2 p = gw->map->vertices[targetVertex];
+        p.x = p.x * TILE_WIDTH + MARGIN;
+        p.y = p.y * TILE_WIDTH + MARGIN;
+
         player->pos.x += player->vel.x;
         player->pos.y += player->vel.y;
+
+        if ( player->direction == PLAYER_DIRECTION_GOING_TO_RIGHT ) {
+            if ( player->pos.x >= p.x ) {
+                player->currentVertex = targetVertex;
+                player->targetVertex = -1;
+                player->moving = false;
+                player->pos.x = p.x;
+                player->pos.y = p.y;
+                player->vel.x = 0;
+            }
+        } else if ( player->direction == PLAYER_DIRECTION_GOING_TO_DOWN ) {
+            if ( player->pos.y >= p.y ) {
+                player->currentVertex = targetVertex;
+                player->targetVertex = -1;
+                player->moving = false;
+                player->pos.x = p.x;
+                player->pos.y = p.y;
+                player->vel.y = 0;
+            }
+        } else if ( player->direction == PLAYER_DIRECTION_GOING_TO_LEFT ) {
+            if ( player->pos.x <= p.x ) {
+                player->currentVertex = targetVertex;
+                player->targetVertex = -1;
+                player->moving = false;
+                player->pos.x = p.x;
+                player->pos.y = p.y;
+                player->vel.x = 0;
+            }
+        } else if ( player->direction == PLAYER_DIRECTION_GOING_TO_UP ) {
+            if ( player->pos.y <= p.y ) {
+                player->currentVertex = targetVertex;
+                player->targetVertex = -1;
+                player->moving = false;
+                player->pos.x = p.x;
+                player->pos.y = p.y;
+                player->vel.y = 0;
+            }
+        }
+
+        /*if ( player->direction == PLAYER_DIRECTION_GOING_TO_RIGHT || 
+             player->direction == PLAYER_DIRECTION_GOING_TO_DOWN ) {
+            if ( player->pos.x >= p.x ||
+                 player->pos.y >= p.y ) {
+                player->currentVertex = targetVertex;
+                player->targetVertex = -1;
+                player->moving = false;
+                player->pos.x = p.x;
+                player->pos.y = p.y;
+                player->vel.x = 0;
+                player->vel.y = 0;
+            }
+        } else if ( player->direction == PLAYER_DIRECTION_GOING_TO_LEFT || 
+                    player->direction == PLAYER_DIRECTION_GOING_TO_UP ) {
+            if ( player->pos.x <= p.x ||
+                 player->pos.y <= p.y ) {
+                player->currentVertex = targetVertex;
+                player->targetVertex = -1;
+                player->moving = false;
+                player->pos.x = p.x;
+                player->pos.y = p.y;
+                player->vel.x = 0;
+                player->vel.y = 0;
+            }
+        }*/
+
     }
     
 
@@ -241,6 +364,29 @@ void drawPlayer( const Player *player ) {
                       player->startAngle, player->endAngle,
                       30, player->color );
 
+}
+
+void turnPlayer( Player *player ) {
+    switch ( player->direction ) {
+        case PLAYER_DIRECTION_GOING_TO_RIGHT:
+            player->startAngle = 45;
+            player->endAngle = 315;
+            break;
+        case PLAYER_DIRECTION_GOING_TO_DOWN:
+            player->startAngle = 135;
+            player->endAngle = 405;
+            break;
+        case PLAYER_DIRECTION_GOING_TO_LEFT:
+            player->startAngle = 225;
+            player->endAngle = 495;
+            break;
+        case PLAYER_DIRECTION_GOING_TO_UP:
+            player->startAngle = 315;
+            player->endAngle = 585;
+            break;
+        default:
+            break;
+    }
 }
 
 void parseMapFile( const char *mapStructurePath, const char *mapGraphPath, Map *map ) {
