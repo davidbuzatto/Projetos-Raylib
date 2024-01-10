@@ -23,12 +23,11 @@
 /*---------------------------------------------
  * Project headers.
  --------------------------------------------*/
-#include <utils.h>
 
 /*---------------------------------------------
  * Macros. 
  --------------------------------------------*/
-
+#define MAX_ZOOM 15
 
 /*--------------------------------------------
  * Constants. 
@@ -39,38 +38,60 @@ const double MIN_X = -2.00;
 const double MAX_X = 0.47;
 const double MIN_Y = -1.12;
 const double MAX_Y = 1.12;
-const double ZOOM_SQUARE_WIDTH = 200;
+const int SCREENS_SIZE = 800;
+const double ZOOM_SQUARE_SIZE = 200;
 const int START_MAX_ITERATIONS = 50;
-const bool START_COLORED = false;
+const bool START_MANDELBROT = true;
+const bool START_COLORED = true;
+const bool START_GRADIENT = false;
 const bool START_ZOOMING = false;
+
+const double MIN_HUE = 0;
+const double MAX_HUE = 360;
+const double COMPLEX_REAL_IMAGINARY_LIMIT = 2;
 
 /*---------------------------------------------
  * Custom types (enums, structs, unions etc.)
  --------------------------------------------*/
-typedef struct HueControl {
+typedef struct SliderControl {
     Vector2 pos;
     int radius;
-    float value;
+    double value;
     Color color;
-} HueControl;
+} SliderControl;
 
 typedef struct ColorBar {
     Vector2 pos;
     int width;
     int height;
     int increment;
-    HueControl *hueControlStart;
-    HueControl *hueControlEnd;
+    SliderControl *hueControlStart;
+    SliderControl *hueControlEnd;
 } ColorBar;
+
+typedef struct ComplexBar {
+    Vector2 pos;
+    int width;
+    int height;
+    int increment;
+    Color color;
+    SliderControl *complexControlReal;
+    SliderControl *complexControlImaginary;
+} ComplexBar;
 
 /*---------------------------------------------
  * Global variables.
  --------------------------------------------*/
 ColorBar colorBar;
-HueControl hueControlStart;
-HueControl hueControlEnd;
-HueControl *selectedHueControl = NULL;
-HueControl *otherHueControl = NULL;
+SliderControl hueControlStart;
+SliderControl hueControlEnd;
+SliderControl *selectedHueControl = NULL;
+SliderControl *otherHueControl = NULL;
+
+ComplexBar complexBar;
+SliderControl complexControlReal;
+SliderControl complexControlImaginary;
+SliderControl *selectedComplexControl = NULL;
 
 int xPress;
 int yPress;
@@ -82,9 +103,22 @@ double maxX;
 double minY;
 double maxY;
 
-int maxIterations;
+bool mandelbrot;
 bool colored;
+bool gradient;
 bool zooming;
+int maxIterations;
+
+double cx;
+double cy;
+double scapeRadius;
+
+double lastMinX[MAX_ZOOM];
+double lastMaxX[MAX_ZOOM];
+double lastMinY[MAX_ZOOM];
+double lastMaxY[MAX_ZOOM];
+int currentZoom;
+
 
 /*---------------------------------------------
  * Function prototypes. 
@@ -94,6 +128,7 @@ bool zooming;
  * @param gw GameWorld struct pointer.
  */
 void inputAndUpdate( void );
+int getIteration( double x0, double y0, double x, double y, int maxIterations );
 
 /**
  * @brief Draws the state of the game.
@@ -101,17 +136,14 @@ void inputAndUpdate( void );
  */
 void draw( void );
 void drawColorBar( const ColorBar *colorBar );
-void drawHueControlBar( const HueControl *hueControl );
-bool interceptsHueControlCoord( const HueControl *hueControl, int x, int y );
+void drawComplexBar( const ComplexBar *complexBar );
+void drawSliderControl( const SliderControl *sliderControl );
+bool interceptsSliderControlCoord( const SliderControl *sliderControl, int x, int y );
 
 int main( void ) {
 
-    const int screenWidth = 800;
-    const int screenHeight = 800;
-
-    // turn antialiasing on (if possible)
     SetConfigFlags( FLAG_MSAA_4X_HINT );
-    InitWindow( screenWidth, screenHeight, "Fractal de Mandelbrot" );
+    InitWindow( SCREENS_SIZE, SCREENS_SIZE, "Fractais de Mandelbrot e Julia" );
     InitAudioDevice();
     SetTargetFPS( 60 );
 
@@ -120,45 +152,90 @@ int main( void ) {
             .x = 20,
             .y = 20
         },
-        .width = 756,
+        .width = GetScreenWidth() - 40,
         .height = 20,
-        .increment = 10
+        .increment = 1
     };
 
-    hueControlStart = (HueControl) {
+    hueControlStart = (SliderControl) {
         .pos = {
             .x = colorBar.pos.x,
             .y = colorBar.pos.y + colorBar.height
         },
         .radius = 5,
-        .value = 0,
+        .value = MIN_HUE,
         .color = BLACK
     };
 
-    hueControlEnd = (HueControl) {
+    hueControlEnd = (SliderControl) {
         .pos = {
             .x = colorBar.pos.x + colorBar.width,
             .y = colorBar.pos.y + colorBar.height
         },
         .radius = 5,
-        .value = 360,
+        .value = MAX_HUE,
         .color = BLACK
     };
 
     colorBar.hueControlStart = &hueControlStart;
     colorBar.hueControlEnd = &hueControlEnd;
 
+    complexBar = (ComplexBar) {
+        .pos = {
+            .x = 20,
+            .y = GetScreenHeight() - 40
+        },
+        .width = GetScreenWidth() - 40,
+        .height = 20,
+        .color = BLUE,
+        .increment = 0
+    };
+
+    complexControlReal = (SliderControl) {
+        .pos = {
+            .x = complexBar.pos.x,
+            .y = complexBar.pos.y
+        },
+        .radius = 5,
+        .value = 0.4,
+        .color = BLACK
+    };
+
+    complexControlImaginary = (SliderControl) {
+        .pos = {
+            .x = complexBar.pos.x,
+            .y = complexBar.pos.y + complexBar.height
+        },
+        .radius = 5,
+        .value = 0.4,
+        .color = BLACK
+    };
+
+    complexBar.complexControlReal = &complexControlReal;
+    complexBar.complexControlImaginary = &complexControlImaginary;
+
+    complexControlReal.pos.x = (int) Lerp( 
+        complexBar.pos.x, complexBar.pos.x + complexBar.width, 
+        (complexControlReal.value + COMPLEX_REAL_IMAGINARY_LIMIT) / ( COMPLEX_REAL_IMAGINARY_LIMIT * 2 ) );
+    complexControlImaginary.pos.x = (int) Lerp( 
+        complexBar.pos.x, complexBar.pos.x + complexBar.width, 
+        (complexControlImaginary.value + COMPLEX_REAL_IMAGINARY_LIMIT) / ( COMPLEX_REAL_IMAGINARY_LIMIT * 2 ) );
+
     minX = MIN_X;
     maxX = MAX_X;
     minY = MIN_Y;
     maxY = MAX_Y;
 
-    for ( float i = 0; i <= GetScreenHeight(); i += 80 ) {
-        printf( "%f\n", Lerp( minY, maxY, i / GetScreenHeight() ) );
-    }
-
-    maxIterations = START_MAX_ITERATIONS;
+    mandelbrot = START_MANDELBROT;
     colored = START_COLORED;
+    gradient = START_GRADIENT;
+    maxIterations = START_MAX_ITERATIONS;
+    
+    cx = complexControlReal.value;
+    cy = complexControlImaginary.value;
+    scapeRadius = 2;
+
+    currentZoom = 0;
 
     while ( !WindowShouldClose() ) {
         inputAndUpdate();
@@ -174,50 +251,118 @@ int main( void ) {
 void inputAndUpdate( void ) {
 
     if ( IsMouseButtonPressed( MOUSE_BUTTON_LEFT ) ) {
+
         xPress = GetMouseX();
         yPress = GetMouseY();
-        if ( interceptsHueControlCoord( &hueControlStart, xPress, yPress ) ) {
+
+        if ( interceptsSliderControlCoord( &hueControlStart, xPress, yPress ) ) {
             xOffset = xPress - hueControlStart.pos.x;
             yOffset = yPress - hueControlStart.pos.y;
             selectedHueControl = &hueControlStart;
             otherHueControl = &hueControlEnd;
-        } else if ( interceptsHueControlCoord( &hueControlEnd, xPress, yPress ) ) {
+        } else if ( interceptsSliderControlCoord( &hueControlEnd, xPress, yPress ) ) {
             xOffset = xPress - hueControlEnd.pos.x;
             yOffset = yPress - hueControlEnd.pos.y;
             selectedHueControl = &hueControlEnd;
             otherHueControl = &hueControlStart;
-        } else if ( zooming ) {
-            double nMinX = Lerp( minX, maxX, (GetMouseX() - ZOOM_SQUARE_WIDTH / 2) / GetScreenWidth() );
-            double nMaxX = Lerp( minX, maxX, (GetMouseX() + ZOOM_SQUARE_WIDTH / 2) / GetScreenWidth() );
-            double nMinY = Lerp( minY, maxY, (GetMouseY() - ZOOM_SQUARE_WIDTH / 2) / GetScreenHeight() );
-            double nMaxY = Lerp( minY, maxY, (GetMouseY() + ZOOM_SQUARE_WIDTH / 2) / GetScreenHeight() );
-            minX = nMinX;
-            maxX = nMaxX;
-            minY = nMinY;
-            maxY = nMaxY;
+        } else if ( interceptsSliderControlCoord( &complexControlReal, xPress, yPress ) ) {
+            xOffset = xPress - complexControlReal.pos.x;
+            yOffset = yPress - complexControlReal.pos.y;
+            selectedComplexControl = &complexControlReal;
+        } else if ( interceptsSliderControlCoord( &complexControlImaginary, xPress, yPress ) ) {
+            xOffset = xPress - complexControlImaginary.pos.x;
+            yOffset = yPress - complexControlImaginary.pos.y;
+            selectedComplexControl = &complexControlImaginary;
         }
     }
 
     if ( IsMouseButtonReleased( MOUSE_BUTTON_LEFT ) ) {
         selectedHueControl = NULL;
         otherHueControl = NULL;
+        selectedComplexControl = NULL;
     }
 
-    if ( IsMouseButtonDown( MOUSE_BUTTON_LEFT ) && selectedHueControl ) {
-        selectedHueControl->pos.x = GetMouseX() - xOffset;
-        if ( otherHueControl == &hueControlEnd ) {
-            if ( selectedHueControl->pos.x < colorBar.pos.x ) {
-                selectedHueControl->pos.x = colorBar.pos.x;
-            } else if ( selectedHueControl->pos.x > otherHueControl->pos.x ) {
-                selectedHueControl->pos.x = otherHueControl->pos.x;
+    if ( IsMouseButtonDown( MOUSE_BUTTON_LEFT ) ) {
+        if ( selectedHueControl ) {
+            selectedHueControl->pos.x = GetMouseX() - xOffset;
+            if ( otherHueControl == &hueControlEnd ) {
+                if ( selectedHueControl->pos.x < colorBar.pos.x ) {
+                    selectedHueControl->pos.x = colorBar.pos.x;
+                } else if ( selectedHueControl->pos.x > otherHueControl->pos.x ) {
+                    selectedHueControl->pos.x = otherHueControl->pos.x;
+                }
+            } else if ( otherHueControl == &hueControlStart ) {
+                if ( selectedHueControl->pos.x > colorBar.pos.x + colorBar.width ) {
+                    selectedHueControl->pos.x = colorBar.pos.x + colorBar.width;
+                } else if ( selectedHueControl->pos.x < otherHueControl->pos.x ) {
+                    selectedHueControl->pos.x = otherHueControl->pos.x;
+                }
             }
-        } else if ( otherHueControl == &hueControlStart ) {
-            if ( selectedHueControl->pos.x > colorBar.pos.x + colorBar.width ) {
-                selectedHueControl->pos.x = colorBar.pos.x + colorBar.width;
-            } else if ( selectedHueControl->pos.x < otherHueControl->pos.x ) {
-                selectedHueControl->pos.x = otherHueControl->pos.x;
+        } else if ( selectedComplexControl ) {
+            selectedComplexControl->pos.x = GetMouseX() - xOffset;
+            if ( selectedComplexControl->pos.x < complexBar.pos.x ) {
+                selectedComplexControl->pos.x = complexBar.pos.x;
+            } else if ( selectedComplexControl->pos.x > complexBar.pos.x + complexBar.width ) {
+                selectedComplexControl->pos.x = complexBar.pos.x + complexBar.width;
             }
         }
+    }
+
+    int wheelMove = GetMouseWheelMove();
+
+    if ( wheelMove > 0 ) {
+
+        if ( currentZoom < MAX_ZOOM ) {
+
+            lastMinX[currentZoom] = minX;
+            lastMaxX[currentZoom] = maxX;
+            lastMinY[currentZoom] = minY;
+            lastMaxY[currentZoom] = maxY;
+            currentZoom++;
+            printf( "%d\n", currentZoom );
+
+            double xStart = GetMouseX() - ZOOM_SQUARE_SIZE / 2;
+            double xEnd = GetMouseX() + ZOOM_SQUARE_SIZE / 2;
+            double yStart = GetMouseY() - ZOOM_SQUARE_SIZE / 2;
+            double yEnd = GetMouseY() + ZOOM_SQUARE_SIZE / 2;
+
+            if ( xStart < 0 ) {
+                xEnd += -xStart;
+                xStart = 0;
+            } else if ( xEnd > GetScreenWidth() ) {
+                xStart -= xEnd - GetScreenWidth();
+                xEnd = GetScreenWidth();
+            }
+
+            if ( yStart < 0 ) {
+                yEnd += -yStart;
+                yStart = 0;
+            } else if ( yEnd > GetScreenHeight() ) {
+                yStart -= yEnd - GetScreenHeight();
+                yEnd = GetScreenWidth();
+            }
+
+            double nMinX = Lerp( minX, maxX, xStart / GetScreenWidth() );
+            double nMaxX = Lerp( minX, maxX, xEnd / GetScreenWidth() );
+            double nMinY = Lerp( minY, maxY, yStart / GetScreenHeight() );
+            double nMaxY = Lerp( minY, maxY, yEnd / GetScreenHeight() );
+            minX = nMinX;
+            maxX = nMaxX;
+            minY = nMinY;
+            maxY = nMaxY;
+
+        }
+
+    } else if ( wheelMove < 0 ) {
+        printf( "xxx" );
+        if ( currentZoom > 0 ) {
+            currentZoom--;
+            minX = lastMinX[currentZoom];
+            maxX = lastMaxX[currentZoom];
+            minY = lastMinY[currentZoom];
+            maxY = lastMaxY[currentZoom];
+        }
+
     }
 
     if ( IsKeyPressed( KEY_UP ) ) {
@@ -229,16 +374,58 @@ void inputAndUpdate( void ) {
         }
     }
 
-    if ( IsKeyPressed( KEY_SPACE ) ) {
+    if ( IsKeyPressed( KEY_C ) ) {
         colored = !colored;
+    }
+
+    if ( IsKeyPressed( KEY_G ) ) {
+        gradient = !gradient;
+    }
+
+    if ( IsKeyPressed( KEY_M ) ) {
+        minX = MIN_X;
+        maxX = MAX_X;
+        minY = MIN_Y;
+        maxY = MAX_Y;
+        currentZoom = 0;
+        mandelbrot = true;
+    }
+
+    if ( IsKeyPressed( KEY_J ) ) {
+        minX = -scapeRadius;
+        maxX = scapeRadius;
+        minY = -scapeRadius;
+        maxY = scapeRadius;
+        currentZoom = 0;
+        mandelbrot = false;
     }
 
     if ( IsKeyPressed( KEY_Z ) ) {
         zooming = !zooming;
     }
 
-    hueControlStart.value = Lerp( 0, 360, ( hueControlStart.pos.x - colorBar.pos.x ) / colorBar.width );
-    hueControlEnd.value = Lerp( 0, 360, ( hueControlEnd.pos.x - colorBar.pos.x ) / colorBar.width );
+    if ( IsKeyPressed( KEY_R ) ) {
+        if ( mandelbrot ) {
+            minX = MIN_X;
+            maxX = MAX_X;
+            minY = MIN_Y;
+            maxY = MAX_Y;
+        } else {
+            minX = -scapeRadius;
+            maxX = scapeRadius;
+            minY = -scapeRadius;
+            maxY = scapeRadius;
+        }
+        currentZoom = 0;
+    }
+
+    hueControlStart.value = Lerp( MIN_HUE, MAX_HUE, ( hueControlStart.pos.x - colorBar.pos.x ) / colorBar.width );
+    hueControlEnd.value = Lerp( MIN_HUE, MAX_HUE, ( hueControlEnd.pos.x - colorBar.pos.x ) / colorBar.width );
+    complexControlReal.value = Lerp( -COMPLEX_REAL_IMAGINARY_LIMIT, COMPLEX_REAL_IMAGINARY_LIMIT, ( complexControlReal.pos.x - complexBar.pos.x ) / complexBar.width );
+    complexControlImaginary.value = Lerp( -COMPLEX_REAL_IMAGINARY_LIMIT, COMPLEX_REAL_IMAGINARY_LIMIT, ( complexControlImaginary.pos.x - complexBar.pos.x ) / complexBar.width );
+
+    cx = complexControlReal.value;
+    cy = complexControlImaginary.value;
 
 }
 
@@ -248,144 +435,201 @@ void draw( void ) {
     ClearBackground( WHITE );
 
     // based on https://en.wikipedia.org/wiki/Mandelbrot_set
+    //          https://en.wikipedia.org/wiki/Julia_set
     
     Color color = { 0, 0, 0, 255 };
 
     for ( int i = 0; i < GetScreenHeight(); i++ ) {
         for ( int j = 0; j < GetScreenWidth(); j++ ) {
 
-            // naive
-            /*double px = j;
-            double py = i;
-            double x = 0.0;
-            double y = 0.0;
-
-            //double x0 = Lerp( minX, maxX, ( (double) j / (GetScreenWidth()-1) ) );
-            //double y0 = Lerp( minY, maxY, ( (double) i / (GetScreenHeight()-1) ) );
-            double x0 = Lerp( minX, maxX, ( px / GetScreenWidth() ) );
-            double y0 = Lerp( minY, maxY, ( py / GetScreenHeight() ) );
-            
-            int k;
-            for ( k = 0; k < maxIterations && x*x + y*y <= 2*2; k++ ) {
-                double xt = x * x - y * y + x0;
-                y = 2 * x * y + y0;
-                x = xt;
-            }*/
-
-            // optimization 1
-            /*double px = j;
-            double py = i;
-            double x = 0.0;
-            double y = 0.0;
-            double x0 = Lerp( minX, maxX, ( px / GetScreenWidth() ) );
-            double y0 = Lerp( minY, maxY, ( py / GetScreenHeight() ) );
-            double x2 = 0.0;
-            double y2 = 0.0;
-            double w = 0;
-            
-            int k;
-            for ( k = 0; k < maxIterations && x2 + y2 <= 4.0; k++ ) {
-                x = x2 - y2 + x0;
-                y = w - x2 - y2 + y0;
-                x2 = x * x;
-                y2 = y * y;
-                w = ( x + y ) * ( x + y );
-            }*/
-
-            // optimization 2
-            /*double px = j;
-            double py = i;
-            double x = 0.0;
-            double y = 0.0;
-            double x0 = Lerp( minX, maxX, ( px / GetScreenWidth() ) );
-            double y0 = Lerp( minY, maxY, ( py / GetScreenHeight() ) );
-            double x2 = 0.0;
-            double y2 = 0.0;
-            
-            int k;
-            for ( k = 0; k < maxIterations && x2 + y2 <= 4.0; k++ ) {
-                y = 2 * x * y + y0;
-                x = x2 - y2 + x0;
-                x2 = x * x;
-                y2 = y * y;
-            }*/
-
-            // colorizing
             double px = j;
             double py = i;
             double x = 0.0;
             double y = 0.0;
-            double x0 = Lerp( minX, maxX, ( px / GetScreenWidth() ) );
-            double y0 = Lerp( minY, maxY, ( py / GetScreenHeight() ) );
-            
-            int k;
-            for ( k = 0; k < maxIterations && x*x + y*y <= ( 1 << 16 ); k++ ) {
-                double xt =  x * x - y * y + x0;
-                y = 2 * x * y + y0;
-                x = xt;
-            }
+            double x0;
+            double y0;
+            double xTemp;
+            int iteration;
 
-            if ( colored ) {
+            if ( mandelbrot ) {
 
-                /*float diff = 0;
-                if ( k < maxIterations ) {
-                    double logZn = log( x * x + y * y ) / 2;
-                    double nu = log( logZn / log(2) ) / log(2);
-                    diff = k - 1 - nu;
+                // fixed complex number
+                x0 = Lerp( minX, maxX, ( px / GetScreenWidth() ) );   // real
+                y0 = Lerp( minY, maxY, ( py / GetScreenHeight() ) );  // imaginary
+
+                for ( iteration = 0; 
+                      iteration < maxIterations && 
+                      x*x + y*y <= ( 1 << 16 ); 
+                      iteration++ ) {
+                    xTemp = x * x - y * y + x0;
+                    y = 2 * x * y + y0;
+                    x = xTemp;
                 }
-                
-                //Color color1 = ColorFromHSV( 
-                //        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) k) / (float) maxIterations ), 1, 0.7 );
-                //Color color2 = ColorFromHSV( 
-                //        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) (k+1)) / (float) maxIterations ), 1, 0.7 );
 
-                //Color color1 = ColorFromHSV( 
-                //        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) diff) / (float) maxIterations ), 1, 0.7 );
-                //Color color2 = ColorFromHSV( 
-                //        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) (k+1)) / (float) maxIterations ), 1, 0.7 );
+                if ( colored ) {
 
-                //Color color1 = ColorFromHSV( 
-                //        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) k) / (float) maxIterations ), 1, 0.7 );
-                //Color color2 = ColorFromHSV( 
-                //        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) (diff+1)) / (float) maxIterations ), 1, 0.7 );
+                    if ( gradient ) {
 
-                Color color1 = ColorFromHSV( 
-                        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) diff) / (float) maxIterations ), 1, 0.7 );
-                Color color2 = ColorFromHSV( 
-                        hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( ((int) (diff+1)) / (float) maxIterations ), 1, 0.7 );
+                        double diff = 0;
+                        if ( iteration < maxIterations ) {
+                            double logZn = log( x * x + y * y ) / 2;
+                            double nu = log( logZn / log(2) ) / log(2);
+                            diff = iteration - 1 - nu;
+                        }
 
-                diff = diff - ((long)diff);
+                        double vStart = diff;
+                        double vEnd = diff;
+                        /*double vStart = diff;
+                        double vEnd = iteration;
+                        double vStart = iteration;
+                        double vEnd = diff;
+                        double vStart = iteration;
+                        double vEnd = iteration;*/
 
-                color = (Color) {
-                    .r = Lerp( color1.r, color2.r, diff ),
-                    .g = Lerp( color1.g, color2.g, diff ),
-                    .b = Lerp( color1.b, color2.b, diff ),
-                    .a = 255
-                };*/
+                        Color color1 = ColorFromHSV( 
+                                hueControlStart.value + 
+                                ( hueControlEnd.value - hueControlStart.value ) * 
+                                ( ((int) vStart) / (double) maxIterations ), 
+                                1, 0.7 );
+                        Color color2 = ColorFromHSV( 
+                                hueControlStart.value + 
+                                ( hueControlEnd.value - hueControlStart.value ) * 
+                                ( ((int) (vEnd+1)) / (double) maxIterations ), 
+                                1, 0.7 );
 
-                color = ColorFromHSV( 
-                    hueControlStart.value + ( hueControlEnd.value - hueControlStart.value ) * ( k / (float) maxIterations ), 1, 0.7 );
+                        diff = diff - ((long)diff);
+
+                        color = (Color) {
+                            .r = Lerp( color1.r, color2.r, diff ),
+                            .g = Lerp( color1.g, color2.g, diff ),
+                            .b = Lerp( color1.b, color2.b, diff ),
+                            .a = 255
+                        };
+
+                    } else {
+
+                        color = ColorFromHSV( hueControlStart.value + 
+                            ( hueControlEnd.value - hueControlStart.value ) * 
+                            ( iteration / (double) maxIterations ), 
+                            1, 0.7 );
+
+                    }
+
+                } else {
+
+                    int c;
+                    
+                    if ( gradient ) {
+
+                        double diff = 0;
+                        if ( iteration < maxIterations ) {
+                            double logZn = log( x * x + y * y ) / 2;
+                            double nu = log( logZn / log(2) ) / log(2);
+                            diff = iteration - 1 - nu;
+                        }
+                        
+                        double c1 = 255 * (diff) / ( (double) maxIterations );
+                        double c2 = 255 * (diff+1) / ( (double) maxIterations );
+                        diff = diff - ((long)diff);
+
+                        c = Lerp( c1, c2, diff );
+
+                    } else {
+                        c = 255 - 255 * ( iteration / (double) maxIterations );
+                    }
+
+                    color.r = c;
+                    color.g = c;
+                    color.b = c;
+
+                }
 
             } else {
 
-                /*float diff = 0;
-                if ( k < maxIterations ) {
-                    double logZn = log( x * x + y * y ) / 2;
-                    double nu = log( logZn / log(2) ) / log(2);
-                    diff = k - 1 - nu;
-                }
+                // variyng complex number (min and max related to scapeRadius)
+                x0 = Lerp( minX, maxX, ( px / GetScreenWidth() ) );    // real
+                y0 = Lerp( minY, maxY, ( py / GetScreenHeight() ) );   // imaginary
                 
-                float c1 = 255 * (diff) / ( (float) maxIterations );
-                float c2 = 255 * (diff+1) / ( (float) maxIterations );
-                diff = diff - ((long)diff);
+                for ( iteration = 0; 
+                      iteration < maxIterations && 
+                      x0*x0 + y0*y0 < scapeRadius*scapeRadius; 
+                      iteration++ ) {
+                    xTemp = x0 * x0 - y0 * y0;
+                    y0 = 2 * x0 * y0 + cy;
+                    x0 = xTemp + cx;
+                }
 
-                int c = 255 - Lerp( c1, c2, diff );*/
+                if ( colored ) {
 
-                int c = 255 - 255 * ( k / (float) maxIterations );
+                    if ( gradient ) {
 
-                color.r = c;
-                color.g = c;
-                color.b = c;
+                        double diff = 0;
+                        if ( iteration < maxIterations ) {
+                            double logZn = log( x0 * x0 + y0 * y0 ) / 2;
+                            double nu = log( logZn / log(2) ) / log(2);
+                            diff = iteration - 1 - nu;
+                        }
+
+                        double vStart = diff;
+                        double vEnd = diff;
+
+                        Color color1 = ColorFromHSV( 
+                                hueControlStart.value + 
+                                ( hueControlEnd.value - hueControlStart.value ) * 
+                                ( ((int) vStart) / (double) maxIterations ), 
+                                1, 0.7 );
+                        Color color2 = ColorFromHSV( 
+                                hueControlStart.value + 
+                                ( hueControlEnd.value - hueControlStart.value ) * 
+                                ( ((int) (vEnd+1)) / (double) maxIterations ), 
+                                1, 0.7 );
+
+                        diff = diff - ((long)diff);
+
+                        color = (Color) {
+                            .r = Lerp( color1.r, color2.r, diff ),
+                            .g = Lerp( color1.g, color2.g, diff ),
+                            .b = Lerp( color1.b, color2.b, diff ),
+                            .a = 255
+                        };
+
+                    } else {
+
+                        color = ColorFromHSV( hueControlStart.value + 
+                            ( hueControlEnd.value - hueControlStart.value ) * 
+                            ( iteration / (double) maxIterations ), 
+                            1, 0.7 );
+
+                    }
+
+                } else {
+
+                    int c;
+                    
+                    if ( gradient ) {
+
+                        double diff = 0;
+                        if ( iteration < maxIterations ) {
+                            double logZn = log( x0 * x0 + y0 * y0 ) / 2;
+                            double nu = log( logZn / log(2) ) / log(2);
+                            diff = iteration - 1 - nu;
+                        }
+                        
+                        double c1 = 255 * (diff) / ( (double) maxIterations );
+                        double c2 = 255 * (diff+1) / ( (double) maxIterations );
+                        diff = diff - ((long)diff);
+
+                        c = Lerp( c1, c2, diff );
+
+                    } else {
+                        c = 255 - 255 * ( iteration / (double) maxIterations );
+                    }
+
+                    color.r = c;
+                    color.g = c;
+                    color.b = c;
+
+                }
 
             }
 
@@ -396,10 +640,10 @@ void draw( void ) {
 
     if ( zooming ) {
         DrawRectangleLines( 
-            GetMouseX() - ZOOM_SQUARE_WIDTH / 2, 
-            GetMouseY() - ZOOM_SQUARE_WIDTH / 2, 
-            ZOOM_SQUARE_WIDTH, 
-            ZOOM_SQUARE_WIDTH, 
+            GetMouseX() - ZOOM_SQUARE_SIZE / 2, 
+            GetMouseY() - ZOOM_SQUARE_SIZE / 2, 
+            ZOOM_SQUARE_SIZE, 
+            ZOOM_SQUARE_SIZE, 
             BLACK );
     }
 
@@ -407,14 +651,19 @@ void draw( void ) {
         drawColorBar( &colorBar );
     }
 
-    DrawFPS( 20, GetScreenHeight() - 40 );
+    if ( !mandelbrot ) {
+        drawComplexBar( &complexBar );
+    }
+
+    DrawFPS( 20, GetScreenHeight() - 60 );
     EndDrawing();
 
 }
 
 void drawColorBar( const ColorBar *colorBar ) {
 
-    int quant = 360 / colorBar->increment;
+    int quant = 10;
+    int increment = 360 / quant;
     int t_width = colorBar->width / quant;
 
     for ( int i = 0; i < quant; i++ ) {
@@ -423,26 +672,34 @@ void drawColorBar( const ColorBar *colorBar ) {
             colorBar->pos.y, 
             t_width, 
             colorBar->height, 
-            ColorFromHSV( i * colorBar->increment, 1, 1 ),
-            ColorFromHSV( (i+1) * colorBar->increment, 1, 1 ) );
+            ColorFromHSV( i * increment, 1, 1 ),
+            ColorFromHSV( (i+1) * increment, 1, 1 ) );
     }
 
     DrawRectangleLines( colorBar->pos.x, colorBar->pos.y, 
                         colorBar->width, colorBar->height, 
                         WHITE );
 
-    drawHueControlBar( colorBar->hueControlStart );
-    drawHueControlBar( colorBar->hueControlEnd );
+    drawSliderControl( colorBar->hueControlStart );
+    drawSliderControl( colorBar->hueControlEnd );
 
 }
 
-void drawHueControlBar( const HueControl *hueControl ) {
-    DrawCircle( hueControl->pos.x, hueControl->pos.y, hueControl->radius, hueControl->color );
-    DrawCircleLines( hueControl->pos.x, hueControl->pos.y, hueControl->radius, WHITE );
+void drawComplexBar( const ComplexBar *complexBar ) {
+    DrawRectangle( complexBar->pos.x, complexBar->pos.y, complexBar->width, complexBar->height, complexBar->color );
+    DrawRectangleLines( complexBar->pos.x, complexBar->pos.y, complexBar->width, complexBar->height, WHITE );
+    drawSliderControl( complexBar->complexControlReal );
+    drawSliderControl( complexBar->complexControlImaginary );
 }
 
-bool interceptsHueControlCoord( const HueControl *hueControl, int x, int y ) {
-    float c1 = x - hueControl->pos.x;
-    float c2 = y - hueControl->pos.y;
-    return c1 * c1 + c2 * c2 <= hueControl->radius * hueControl->radius;
+void drawSliderControl( const SliderControl *sliderControl ) {
+    DrawCircle( sliderControl->pos.x, sliderControl->pos.y, sliderControl->radius, sliderControl->color );
+    DrawCircleLines( sliderControl->pos.x, sliderControl->pos.y, sliderControl->radius, WHITE );
+    DrawText( TextFormat( "%.4f", sliderControl->value ), sliderControl->pos.x + sliderControl->radius, sliderControl->pos.y + 5, 10, BLACK );
+}
+
+bool interceptsSliderControlCoord( const SliderControl *sliderControl, int x, int y ) {
+    double c1 = x - sliderControl->pos.x;
+    double c2 = y - sliderControl->pos.y;
+    return c1 * c1 + c2 * c2 <= sliderControl->radius * sliderControl->radius;
 }
