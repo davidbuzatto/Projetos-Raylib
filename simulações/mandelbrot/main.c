@@ -39,7 +39,7 @@ const double MIN_X = -2.00;
 const double MAX_X = 0.47;
 const double MIN_Y = -1.12;
 const double MAX_Y = 1.12;
-const double ZOOM_SQUARE_WIDTH = 300;
+const double ZOOM_SQUARE_WIDTH = 200;
 const int START_MAX_ITERATIONS = 50;
 const bool START_COLORED = false;
 const bool START_ZOOMING = false;
@@ -113,7 +113,7 @@ int main( void ) {
     SetConfigFlags( FLAG_MSAA_4X_HINT );
     InitWindow( screenWidth, screenHeight, "Fractal de Mandelbrot" );
     InitAudioDevice();
-    SetTargetFPS( 60 );    
+    SetTargetFPS( 60 );
 
     colorBar = (ColorBar) {
         .pos = {
@@ -153,6 +153,10 @@ int main( void ) {
     minY = MIN_Y;
     maxY = MAX_Y;
 
+    for ( float i = 0; i <= GetScreenHeight(); i += 80 ) {
+        printf( "%f\n", Lerp( minY, maxY, i / GetScreenHeight() ) );
+    }
+
     maxIterations = START_MAX_ITERATIONS;
     colored = START_COLORED;
 
@@ -183,10 +187,14 @@ void inputAndUpdate( void ) {
             selectedHueControl = &hueControlEnd;
             otherHueControl = &hueControlStart;
         } else if ( zooming ) {
-            minX = Lerp( minX, maxX, (GetMouseX() - ZOOM_SQUARE_WIDTH / 2) / GetScreenWidth() );
-            maxX = Lerp( minX, maxX, (GetMouseX() + ZOOM_SQUARE_WIDTH / 2) / GetScreenWidth() );
-            minY = Lerp( minY, maxY, (GetMouseY() - ZOOM_SQUARE_WIDTH / 2) / GetScreenWidth() );
-            maxY = Lerp( minY, maxY, (GetMouseY() + ZOOM_SQUARE_WIDTH / 2) / GetScreenWidth() );
+            double nMinX = Lerp( minX, maxX, (GetMouseX() - ZOOM_SQUARE_WIDTH / 2) / GetScreenWidth() );
+            double nMaxX = Lerp( minX, maxX, (GetMouseX() + ZOOM_SQUARE_WIDTH / 2) / GetScreenWidth() );
+            double nMinY = Lerp( minY, maxY, (GetMouseY() - ZOOM_SQUARE_WIDTH / 2) / GetScreenHeight() );
+            double nMaxY = Lerp( minY, maxY, (GetMouseY() + ZOOM_SQUARE_WIDTH / 2) / GetScreenHeight() );
+            minX = nMinX;
+            maxX = nMaxX;
+            minY = nMinY;
+            maxY = nMaxY;
         }
     }
 
