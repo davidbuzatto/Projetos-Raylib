@@ -319,7 +319,6 @@ void inputAndUpdate( void ) {
             lastMinY[currentZoom] = minY;
             lastMaxY[currentZoom] = maxY;
             currentZoom++;
-            printf( "%d\n", currentZoom );
 
             double xStart = GetMouseX() - ZOOM_SQUARE_SIZE / 2;
             double xEnd = GetMouseX() + ZOOM_SQUARE_SIZE / 2;
@@ -354,7 +353,6 @@ void inputAndUpdate( void ) {
         }
 
     } else if ( wheelMove < 0 ) {
-        printf( "xxx" );
         if ( currentZoom > 0 ) {
             currentZoom--;
             minX = lastMinX[currentZoom];
