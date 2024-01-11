@@ -10,9 +10,26 @@
 
 #include <raylib.h>
 #include <Drawable.h>
+#include <Curve.h>
+#include <Path.h>
+#include <Ball.h>
 
 class GameWorld : public virtual Drawable {
-    
+
+private:
+    Path path;
+    Curve tempCurve;
+    bool drawingTempCurve;
+    bool drawingPath;
+    ControlPoint *selectedControlPoint;
+    Curve *selectedCurve;
+    Ball ball;
+    bool runningPath;
+    unsigned int currentCurve;
+    float currentValue;
+    int xPress;
+    int yPress;
+
 public:
 
     /**
@@ -33,7 +50,7 @@ public:
     /**
      * @brief Draws the state of the game.
      */
-    virtual void draw( void ) const;
+    virtual void draw( void );
 
 private:
 

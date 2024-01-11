@@ -1,7 +1,8 @@
 /**
  * @file main.c
  * @author Prof. Dr. David Buzatto
- * @brief Mandelbrot fractal using Raylib (https://www.raylib.com/).
+ * @brief Mandelbrot and Julia fractals using
+ * Raylib (https://www.raylib.com/).
  * 
  * @copyright Copyright (c) 2024
  */
