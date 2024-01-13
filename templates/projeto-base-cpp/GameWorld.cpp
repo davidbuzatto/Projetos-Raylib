@@ -19,7 +19,7 @@
 /**
  * @brief Construct a new GameWorld object
  */
-GameWorld::GameWorld( void ) {
+GameWorld::GameWorld() {
     loadResources();
     std::cout << "creating game world..." << std::endl;
 }
@@ -27,7 +27,7 @@ GameWorld::GameWorld( void ) {
 /**
  * @brief Destroy the GameWorld object
  */
-GameWorld::~GameWorld( void ) {
+GameWorld::~GameWorld() {
     unloadResources();
     std::cout << "destroying game world..." << std::endl;
 }
@@ -35,14 +35,14 @@ GameWorld::~GameWorld( void ) {
 /**
  * @brief Reads user input and updates the state of the game.
  */
-void GameWorld::inputAndUpdate( void ) {
+void GameWorld::inputAndUpdate() {
 
 }
 
 /**
  * @brief Draws the state of the game.
  */
-void GameWorld::draw( void ) const {
+void GameWorld::draw() const {
 
     BeginDrawing();
     ClearBackground( WHITE );
@@ -62,7 +62,7 @@ void GameWorld::draw( void ) const {
  * @brief Load game resources like images, textures, sounds, fonts, shaders etc.
  * Should be called inside the constructor.
  */
-void GameWorld::loadResources( void ) {
+void GameWorld::loadResources() {
     std::cout << "loading resources..." << std::endl;
 }
 
@@ -70,6 +70,6 @@ void GameWorld::loadResources( void ) {
  * @brief Unload the once loaded game resources.
  * Should be called inside the destructor.
  */
-void GameWorld::unloadResources( void ) {
+void GameWorld::unloadResources() {
     std::cout << "unloading resources..." << std::endl;
 }

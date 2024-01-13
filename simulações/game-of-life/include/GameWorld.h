@@ -2,7 +2,7 @@
  * @file GameWorld.h
  * @author Prof. Dr. David Buzatto
  * @brief GameWorld class declaration. This class should contain all
- * game components and its state.
+ * game components and state.
  * 
  * @copyright Copyright (c) 2024
  */
@@ -13,8 +13,17 @@
 
 class GameWorld : public virtual Drawable {
 
-    // private GameWorld attributes
-    
+    int cellWidth;
+    int generationLength;
+    int generations;
+    int rule;
+    bool randomizeFirstGeneration;
+
+    int *evolutionArray;
+    int evolutionArraySize;
+
+    int ruleValues[8];
+
 public:
 
     /**
@@ -37,7 +46,15 @@ public:
      */
     virtual void draw() const;
 
+    int getCellWidth() const;
+    int getGenerationLength() const;
+    int getGenerations() const;
+
 private:
+
+    void updateRuleValues();
+    void updateEvolutionArray();
+    int getRuleValue( int a, int b, int c );
 
     /**
      * @brief Load game resources like images, textures, sounds, fonts, shaders,
