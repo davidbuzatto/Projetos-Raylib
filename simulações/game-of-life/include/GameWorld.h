@@ -10,19 +10,21 @@
 
 #include <raylib.h>
 #include <Drawable.h>
+#include <GameState.h>
 
 class GameWorld : public virtual Drawable {
 
     int cellWidth;
-    int generationLength;
-    int generations;
-    int rule;
-    bool randomizeFirstGeneration;
+    int lines;
+    int columns;
 
     int *evolutionArray;
+    int *resetArray;
+    int *newGeneration;
     int evolutionArraySize;
 
-    int ruleValues[8];
+    float time;
+    GameState state;
 
 public:
 
@@ -47,14 +49,13 @@ public:
     virtual void draw() const;
 
     int getCellWidth() const;
-    int getGenerationLength() const;
-    int getGenerations() const;
+    int getColumns() const;
+    int getLines() const;
 
 private:
 
-    void updateRuleValues();
-    void updateEvolutionArray();
-    int getRuleValue( int a, int b, int c );
+    void createNewGeneration();
+    int countNeighbors( int line, int column );
 
     /**
      * @brief Load game resources like images, textures, sounds, fonts, shaders,

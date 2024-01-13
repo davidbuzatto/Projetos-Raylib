@@ -1,7 +1,7 @@
 /**
  * @file main.cpp
  * @author Prof. Dr. David Buzatto
- * @brief Main function. Base template for game development in C++ using
+ * @brief Linear celular automata developed in C++ using
  * Raylib (https://www.raylib.com/).
  * 
  * @copyright Copyright (c) 2024

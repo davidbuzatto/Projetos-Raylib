@@ -24,8 +24,8 @@ GameWindow::GameWindow() :
 
     std::cout << "creating game window..." << std::endl;
     
-    screenWidth = gw.getGenerationLength() * gw.getCellWidth();
-    screenHeight = gw.getGenerations() * gw.getCellWidth();
+    screenWidth = gw.getColumns() * gw.getCellWidth();
+    screenHeight = gw.getLines() * gw.getCellWidth();
 
 }
 
@@ -43,10 +43,8 @@ GameWindow::~GameWindow() {
 void GameWindow::init() {
 
     std::cout << "initializing GUI..." << std::endl;
-
-    SetConfigFlags( FLAG_MSAA_4X_HINT );
+    
     InitWindow( screenWidth, screenHeight, windowTitle.c_str() );
-    InitAudioDevice();
     SetTargetFPS( 60 ); 
 
     while ( !WindowShouldClose() ) {
@@ -54,7 +52,6 @@ void GameWindow::init() {
         gw.draw();
     }
 
-    CloseAudioDevice();
     CloseWindow();
 
 }

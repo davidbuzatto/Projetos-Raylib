@@ -14,30 +14,36 @@
 #include <cstring>
 #include <ctime>
 #include <cassert>
+#include <algorithm>
+#include <iterator>
 #include <raylib.h>
+
+#include <GameState.h>
 
 /**
  * @brief Construct a new GameWorld object
  */
 GameWorld::GameWorld() : 
-        cellWidth( 2 ),
-        generationLength( 600 ),
-        generations( 600 ),
-        rule( 110 ),
-        randomizeFirstGeneration( false ) {
+        cellWidth( 24 ),
+        lines( 50 ),
+        columns( 50 ),
+        state( GameState::IDLE ) {
 
     loadResources();
     std::cout << "creating game world..." << std::endl;
 
-    if ( generationLength % 2 == 0 ) {
-        generationLength++;
-    }
+    evolutionArraySize = columns * lines;
+    evolutionArray = new int[evolutionArraySize];
+    resetArray = new int[evolutionArraySize];
+    newGeneration = new int[evolutionArraySize];
 
-    evolutionArraySize = generationLength * generations;
-    evolutionArray = new int[evolutionArraySize];    
+    std::fill_n( evolutionArray, evolutionArraySize, 0 );
 
-    updateRuleValues();
-    updateEvolutionArray();
+    evolutionArray[1024] = 1;
+    evolutionArray[1073] = 1;
+    evolutionArray[1123] = 1;
+    evolutionArray[1124] = 1;
+    evolutionArray[1125] = 1;
 
 }
 
@@ -48,6 +54,7 @@ GameWorld::~GameWorld() {
     unloadResources();
     std::cout << "destroying game world..." << std::endl;
     delete[] evolutionArray;
+    delete[] newGeneration;
 }
 
 /**
@@ -55,24 +62,37 @@ GameWorld::~GameWorld() {
  */
 void GameWorld::inputAndUpdate() {
 
-    if ( IsKeyPressed( KEY_UP ) ) {
-        rule++;
-        rule %= 256;
-        updateRuleValues();
-        updateEvolutionArray();
-    } else if ( IsKeyPressed( KEY_DOWN ) ) {
-        rule--;
-        rule %= 256;
-        if ( rule < 0 ) {
-            rule = 0;
-        }
-        updateRuleValues();
-        updateEvolutionArray();
+    if ( state == GameState::RUNNING && time >= 0.3 ) {
+        createNewGeneration();
+        time = 0;
+    } else {
+        time += GetFrameTime();
     }
 
-    if ( IsKeyPressed( KEY_R ) ) {
-        randomizeFirstGeneration = !randomizeFirstGeneration;
-        updateEvolutionArray();
+    if ( IsMouseButtonDown( MOUSE_BUTTON_LEFT ) && state == GameState::IDLE ) {
+        int line = GetMouseY() / cellWidth;
+        int column = GetMouseX() / cellWidth;
+        if ( evolutionArray[line*columns + column] == 0 ) {
+            evolutionArray[line*columns + column] = 1;
+            std::cout << "added: " << line*columns+column << std::endl;
+        }
+    } else if ( IsMouseButtonDown( MOUSE_BUTTON_RIGHT ) && state == GameState::IDLE ) {
+        int line = GetMouseY() / cellWidth;
+        int column = GetMouseX() / cellWidth;
+        if ( evolutionArray[line*columns + column] == 1 ) {
+            evolutionArray[line*columns + column] = 0;
+            std::cout << "removed: " << line*columns+column << std::endl;
+        }
+    }
+
+    if ( IsKeyPressed( KEY_R ) && state == GameState::RUNNING ) {
+        std::copy( resetArray, resetArray+evolutionArraySize, evolutionArray );
+        state = GameState::IDLE;
+    }
+
+    if ( IsKeyPressed( KEY_SPACE ) && state == GameState::IDLE ) {
+        std::copy( evolutionArray, evolutionArray+evolutionArraySize, resetArray );
+        state = GameState::RUNNING;
     }
 
 }
@@ -85,26 +105,21 @@ void GameWorld::draw() const {
     BeginDrawing();
     ClearBackground( WHITE );
 
-    for ( int i = 0; i < generations; i++ ) {
-        for ( int j = 0; j < generationLength; j++ ) {
-            if ( evolutionArray[i*generationLength + j] ) {
+    for ( int i = 0; i < lines; i++ ) {
+        for ( int j = 0; j < columns; j++ ) {
+            if ( evolutionArray[i*columns + j] ) {
                 DrawRectangle( j * cellWidth, i * cellWidth, cellWidth, cellWidth, BLACK );
             }
         }
     }
 
-    char ruleText[30];
-    int ruleTextWidth;
-    sprintf( ruleText, "Rule: %d%s", rule, randomizeFirstGeneration ? " (aleatório)" : "" );
-    ruleTextWidth = MeasureText( ruleText, 20 );
-    Rectangle r = {
-        .x = 10,
-        .y = 14,
-        .width = (float) ( ruleTextWidth + 20 ),
-        .height = 30
-    };
-    DrawRectangleRounded( r, 0.5, 10, Fade( WHITE, 0.9 ) );
-    DrawText( ruleText, 21, 22, 20, BLACK );
+    for ( int i = 1; i < lines; i++ ) {
+        DrawLine( 0, i * cellWidth, GetScreenWidth(), i * cellWidth, GRAY );
+    }
+
+    for ( int i = 1; i < columns; i++ ) {
+        DrawLine( i * cellWidth, 0, i * cellWidth, GetScreenHeight(), GRAY );
+    }
 
     EndDrawing();
 
@@ -114,56 +129,62 @@ int GameWorld::getCellWidth() const {
     return cellWidth;
 }
 
-int GameWorld::getGenerationLength() const {
-    return generationLength;
+int GameWorld::getLines() const {
+    return lines;
 }
 
-int GameWorld::getGenerations() const {
-    return generations;
+int GameWorld::getColumns() const {
+    return columns;
 }
 
-void GameWorld::updateRuleValues() {
+void GameWorld::createNewGeneration() {
 
-    std::fill_n( ruleValues, 8, 0 );
-
-    int v = rule;
-    int k = 7;
-
-    while ( v != 0 && k >= 0 ) {
-        ruleValues[k--] = v % 2;
-        v /= 2;
-    }
-
-}
-
-void GameWorld::updateEvolutionArray() {
-
-    std::fill_n( evolutionArray, evolutionArraySize, 0 );
-
-    if ( randomizeFirstGeneration ) {
-        for ( int i = 0; i < generationLength; i++ ) {
-            evolutionArray[i] = GetRandomValue( 0, 1 );
-        }
-    } else {
-        evolutionArray[generationLength/2] = 1;
-    }
-    
-    for ( int i = 1; i < generations; i++ ) {
-        for ( int j = 0; j < generationLength; j++ ) {
-            int pa = (i-1) * generationLength + (j - 1);
-            int pb = (i-1) * generationLength + j;
-            int pc = (i-1) * generationLength + (j + 1);
-            int a = j-1 < 0 ? 0 : evolutionArray[pa];
-            int b = evolutionArray[pb];
-            int c = j+1 >= generationLength ? 0 : evolutionArray[pc];
-            evolutionArray[i * generationLength + j] = getRuleValue( a, b, c );
+    for ( int i = 0; i < lines; i++ ) {
+        for ( int j = 0; j < columns; j++ ) {
+            int p = i*columns+j;
+            int n = countNeighbors( i, j );
+            if ( evolutionArray[p] ) {
+                if ( n <= 1 || n >= 4 ) {
+                    newGeneration[p] = 0;
+                } else {
+                    newGeneration[p] = 1;
+                }
+            } else {
+                if ( n == 3 ) {
+                    newGeneration[p] = 1;
+                } else {
+                    newGeneration[p] = 0;
+                }
+            }
         }
     }
 
+    std::copy( newGeneration, newGeneration+evolutionArraySize, evolutionArray );
+
 }
 
-int GameWorld::getRuleValue( int a, int b, int c ) {
-    return ruleValues[7-(a*4+b*2+c)];
+int GameWorld::countNeighbors( int line, int column ) {
+
+    int count = 0;
+
+    for ( int i = line-1; i < line + 2; i++ ) {
+        for ( int j = column-1; j < column + 2; j++ ) {
+            if ( i >= 0 &&
+                 i < lines && 
+                 j >= 0 &&
+                 j < columns &&
+                 evolutionArray[i*columns+j] ) {
+                count++;
+            }
+        }
+    }
+
+    if ( evolutionArray[line*columns+column] ) {
+        count--;
+    }
+
+    return count;
+
 }
 
 /**
