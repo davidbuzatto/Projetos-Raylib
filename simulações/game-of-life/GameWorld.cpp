@@ -24,26 +24,50 @@
  * @brief Construct a new GameWorld object
  */
 GameWorld::GameWorld() : 
-        cellWidth( 24 ),
-        lines( 50 ),
-        columns( 50 ),
+        minCellWidth( 1 ),
+        boardWidth( 960 ),
         state( GameState::IDLE ) {
 
     loadResources();
     std::cout << "creating game world..." << std::endl;
 
+    lines = boardWidth / minCellWidth;
+    columns = lines;
+
+    cellWidth = allowedCellWidths[currentZoom];
+    
     evolutionArraySize = columns * lines;
     evolutionArray = new int[evolutionArraySize];
     resetArray = new int[evolutionArraySize];
     newGeneration = new int[evolutionArraySize];
 
+    drawGrid = true;
+
+    currentTime = 0;
+    timeToWait = 0.3;
+
     std::fill_n( evolutionArray, evolutionArraySize, 0 );
 
-    evolutionArray[1024] = 1;
-    evolutionArray[1073] = 1;
-    evolutionArray[1123] = 1;
-    evolutionArray[1124] = 1;
-    evolutionArray[1125] = 1;
+    evolutionArray[454554] = 1;
+    evolutionArray[455513] = 1;
+    evolutionArray[456473] = 1;
+    evolutionArray[456474] = 1;
+    evolutionArray[456475] = 1;
+    evolutionArray[455525] = 1;
+    evolutionArray[454564] = 1;
+    evolutionArray[454563] = 1;
+    evolutionArray[455523] = 1;
+    evolutionArray[456483] = 1;
+    evolutionArray[466084] = 1;
+    evolutionArray[465125] = 1;
+    evolutionArray[464165] = 1;
+    evolutionArray[464164] = 1;
+    evolutionArray[464163] = 1;
+    evolutionArray[465113] = 1;
+    evolutionArray[466074] = 1;
+    evolutionArray[466075] = 1;
+    evolutionArray[465115] = 1;
+    evolutionArray[464155] = 1;
 
 }
 
@@ -62,37 +86,78 @@ GameWorld::~GameWorld() {
  */
 void GameWorld::inputAndUpdate() {
 
-    if ( state == GameState::RUNNING && time >= 0.3 ) {
-        createNewGeneration();
-        time = 0;
-    } else {
-        time += GetFrameTime();
+    int mw = GetMouseWheelMove();
+    if ( mw > 0 ) {
+        currentZoom++;
+        if ( currentZoom > MAX_ZOOM ) {
+            currentZoom = MAX_ZOOM;
+        }
+    } else if ( mw < 0 ) {
+        currentZoom--;
+        if ( currentZoom < 0 ) {
+            currentZoom = 0;
+        }
+    }
+    cellWidth = allowedCellWidths[currentZoom];
+
+    startLine = (lines / 2) - (boardWidth / cellWidth / 2);
+    endLine = startLine + (boardWidth / cellWidth);
+    startColumn = (columns / 2) - (boardWidth / cellWidth / 2);
+    endColumn = startColumn + (boardWidth / cellWidth);
+
+    if ( IsKeyPressed( KEY_UP ) ) {
+        timeToWait += 0.05;
+        if ( timeToWait > 2.0 ) {
+            timeToWait = 2.0;
+        }
+    } else if ( IsKeyPressed( KEY_DOWN ) ) {
+        timeToWait -= 0.05;
+        if ( timeToWait < 0.05 ) {
+            timeToWait = 0.05;
+        }
     }
 
-    if ( IsMouseButtonDown( MOUSE_BUTTON_LEFT ) && state == GameState::IDLE ) {
-        int line = GetMouseY() / cellWidth;
-        int column = GetMouseX() / cellWidth;
+    if ( state == GameState::RUNNING && currentTime >= timeToWait ) {
+        createNewGeneration();
+        currentTime = 0;
+    } else {
+        currentTime += GetFrameTime();
+    }
+
+    if ( IsMouseButtonDown( MOUSE_BUTTON_LEFT ) && state != GameState::RUNNING ) {
+        int line = GetMouseY() / cellWidth + startLine;
+        int column = GetMouseX() / cellWidth + startColumn;
         if ( evolutionArray[line*columns + column] == 0 ) {
             evolutionArray[line*columns + column] = 1;
-            std::cout << "added: " << line*columns+column << std::endl;
+            //std::cout << "added: " << line*columns+column << std::endl;
         }
-    } else if ( IsMouseButtonDown( MOUSE_BUTTON_RIGHT ) && state == GameState::IDLE ) {
-        int line = GetMouseY() / cellWidth;
-        int column = GetMouseX() / cellWidth;
+    } else if ( IsMouseButtonDown( MOUSE_BUTTON_RIGHT ) && state != GameState::RUNNING ) {
+        int line = GetMouseY() / cellWidth + startLine;
+        int column = GetMouseX() / cellWidth + startColumn;
         if ( evolutionArray[line*columns + column] == 1 ) {
             evolutionArray[line*columns + column] = 0;
-            std::cout << "removed: " << line*columns+column << std::endl;
+            //std::cout << "removed: " << line*columns+column << std::endl;
         }
     }
 
-    if ( IsKeyPressed( KEY_R ) && state == GameState::RUNNING ) {
+    if ( IsKeyPressed( KEY_R ) && state != GameState::IDLE ) {
         std::copy( resetArray, resetArray+evolutionArraySize, evolutionArray );
         state = GameState::IDLE;
     }
 
-    if ( IsKeyPressed( KEY_SPACE ) && state == GameState::IDLE ) {
-        std::copy( evolutionArray, evolutionArray+evolutionArraySize, resetArray );
-        state = GameState::RUNNING;
+    if ( IsKeyPressed( KEY_SPACE ) ) {
+        if ( state == GameState::IDLE ) {
+            std::copy( evolutionArray, evolutionArray+evolutionArraySize, resetArray );
+            state = GameState::RUNNING;
+        } else if ( state == GameState::RUNNING ) {
+            state = GameState::PAUSED;
+        } else if ( state == GameState::PAUSED ) {
+            state = GameState::RUNNING;
+        }
+    }
+
+    if ( IsKeyPressed( KEY_G ) ) {
+        drawGrid = !drawGrid;
     }
 
 }
@@ -105,36 +170,43 @@ void GameWorld::draw() const {
     BeginDrawing();
     ClearBackground( WHITE );
 
-    for ( int i = 0; i < lines; i++ ) {
-        for ( int j = 0; j < columns; j++ ) {
+    for ( int i = startLine; i < endLine; i++ ) {
+        for ( int j = startColumn; j <= endColumn; j++ ) {
             if ( evolutionArray[i*columns + j] ) {
-                DrawRectangle( j * cellWidth, i * cellWidth, cellWidth, cellWidth, BLACK );
+                DrawRectangle( 
+                    j * cellWidth - startColumn * cellWidth, 
+                    i * cellWidth - startLine * cellWidth, 
+                    cellWidth, cellWidth, BLACK );
             }
         }
     }
 
-    for ( int i = 1; i < lines; i++ ) {
-        DrawLine( 0, i * cellWidth, GetScreenWidth(), i * cellWidth, GRAY );
+    if ( drawGrid ) {
+        for ( int i = 1; i < endLine - startLine; i++ ) {
+            if ( i % 10 == 0 ) {
+                DrawLine( 0, i * cellWidth, GetScreenWidth(), i * cellWidth, BLACK );
+            } else {
+                DrawLine( 0, i * cellWidth, GetScreenWidth(), i * cellWidth, GRAY );
+            }
+        }
+
+        for ( int i = 1; i < endColumn - startColumn; i++ ) {
+            if ( i % 10 == 0 ) {
+                DrawLine( i * cellWidth, 0, i * cellWidth, GetScreenHeight(), BLACK );
+            } else {
+                DrawLine( i * cellWidth, 0, i * cellWidth, GetScreenHeight(), GRAY );
+            }
+        }
     }
 
-    for ( int i = 1; i < columns; i++ ) {
-        DrawLine( i * cellWidth, 0, i * cellWidth, GetScreenHeight(), GRAY );
-    }
+    DrawText( TextFormat( "%.2f segundos para a próxima geração.", timeToWait ), 20, 20, 20, BLUE );
 
     EndDrawing();
 
 }
 
-int GameWorld::getCellWidth() const {
-    return cellWidth;
-}
-
-int GameWorld::getLines() const {
-    return lines;
-}
-
-int GameWorld::getColumns() const {
-    return columns;
+int GameWorld::getBoardWidth() const {
+    return boardWidth;
 }
 
 void GameWorld::createNewGeneration() {

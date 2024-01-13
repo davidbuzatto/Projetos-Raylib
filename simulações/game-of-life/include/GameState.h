@@ -2,5 +2,6 @@
 
 enum GameState {
     IDLE,
-    RUNNING
+    RUNNING,
+    PAUSED
 };

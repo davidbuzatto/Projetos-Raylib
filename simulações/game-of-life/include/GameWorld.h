@@ -14,7 +14,8 @@
 
 class GameWorld : public virtual Drawable {
 
-    int cellWidth;
+    int minCellWidth;
+    int boardWidth;
     int lines;
     int columns;
 
@@ -23,7 +24,20 @@ class GameWorld : public virtual Drawable {
     int *newGeneration;
     int evolutionArraySize;
 
-    float time;
+    const int MAX_ZOOM = 6;
+    const int allowedCellWidths[8] = { 1, 2, 4, 8, 12, 24, 48 };
+    int currentZoom = 5;
+    int cellWidth;
+
+    int startLine;
+    int endLine;
+    int startColumn;
+    int endColumn;
+
+    bool drawGrid;
+
+    float currentTime;
+    float timeToWait;
     GameState state;
 
 public:
@@ -48,9 +62,7 @@ public:
      */
     virtual void draw() const;
 
-    int getCellWidth() const;
-    int getColumns() const;
-    int getLines() const;
+    int getBoardWidth() const;
 
 private:
 

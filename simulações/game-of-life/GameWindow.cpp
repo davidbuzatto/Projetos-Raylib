@@ -24,8 +24,8 @@ GameWindow::GameWindow() :
 
     std::cout << "creating game window..." << std::endl;
     
-    screenWidth = gw.getColumns() * gw.getCellWidth();
-    screenHeight = gw.getLines() * gw.getCellWidth();
+    screenWidth = gw.getBoardWidth();
+    screenHeight = gw.getBoardWidth();
 
 }
 
