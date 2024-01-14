@@ -20,7 +20,7 @@
  * @brief Construct a new GameWindow object
  */
 GameWindow::GameWindow() : 
-        windowTitle( "John Conway's Game of Life" ) {
+        windowTitle( "Formiga da Langton" ) {
 
     std::cout << "creating game window..." << std::endl;
     

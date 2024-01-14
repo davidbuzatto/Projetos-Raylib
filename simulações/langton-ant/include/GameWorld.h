@@ -8,9 +8,11 @@
  */
 #pragma once
 
+#include <string>
 #include <raylib.h>
 #include <Drawable.h>
 #include <GameState.h>
+#include <Ant.h>
 
 class GameWorld : public virtual Drawable {
 
@@ -19,10 +21,8 @@ class GameWorld : public virtual Drawable {
     int lines;
     int columns;
 
-    int *evolutionArray;
-    int *resetArray;
-    int *newGeneration;
-    int evolutionArraySize;
+    unsigned int *board;
+    int boardSize;
 
     const int MAX_ZOOM = 6;
     const int allowedCellWidths[8] = { 1, 2, 4, 8, 12, 24, 48 };
@@ -39,6 +39,12 @@ class GameWorld : public virtual Drawable {
     float currentTime;
     float timeToWait;
     GameState state;
+
+    Ant ant;
+    int antMovesPerStep;
+    int currentMove;
+
+    bool showInfo;
 
 public:
 
@@ -66,8 +72,15 @@ public:
 
 private:
 
-    void createNewGeneration();
-    int countNeighbors( int line, int column );
+    void nextStep();
+
+    void generateAntDecisions( 
+        std::string turns, 
+        int startHue, 
+        int endHue, 
+        float saturation, 
+        float value, 
+        unsigned int initialColor );
 
     /**
      * @brief Load game resources like images, textures, sounds, fonts, shaders,

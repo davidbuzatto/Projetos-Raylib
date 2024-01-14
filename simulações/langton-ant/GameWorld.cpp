@@ -7,6 +7,7 @@
  */
 #include <GameWorld.h>
 
+#include <vector>
 #include <iostream>
 #include <fmt/format.h>
 #include <cmath>
@@ -26,7 +27,10 @@
 GameWorld::GameWorld() : 
         minCellWidth( 1 ),
         boardWidth( 960 ),
-        state( GameState::IDLE ) {
+        state( GameState::IDLE ),
+        ant( Ant( 479, 479 ) ),
+        antMovesPerStep( 100 ),
+        showInfo( true ) {
 
     loadResources();
     std::cout << "creating game world..." << std::endl;
@@ -35,39 +39,27 @@ GameWorld::GameWorld() :
     columns = lines;
 
     cellWidth = allowedCellWidths[currentZoom];
+    ant.setCellWidth( cellWidth );
     
-    evolutionArraySize = columns * lines;
-    evolutionArray = new int[evolutionArraySize];
-    resetArray = new int[evolutionArraySize];
-    newGeneration = new int[evolutionArraySize];
+    boardSize = columns * lines;
+    board = new unsigned int[boardSize];
 
     drawGrid = true;
 
     currentTime = 0;
-    timeToWait = 0.3;
+    timeToWait = 0.5;
 
-    std::fill_n( evolutionArray, evolutionArraySize, 0 );
+    currentMove = 0;
 
-    evolutionArray[454554] = 1;
-    evolutionArray[455513] = 1;
-    evolutionArray[456473] = 1;
-    evolutionArray[456474] = 1;
-    evolutionArray[456475] = 1;
-    evolutionArray[455525] = 1;
-    evolutionArray[454564] = 1;
-    evolutionArray[454563] = 1;
-    evolutionArray[455523] = 1;
-    evolutionArray[456483] = 1;
-    evolutionArray[466084] = 1;
-    evolutionArray[465125] = 1;
-    evolutionArray[464165] = 1;
-    evolutionArray[464164] = 1;
-    evolutionArray[464163] = 1;
-    evolutionArray[465113] = 1;
-    evolutionArray[466074] = 1;
-    evolutionArray[466075] = 1;
-    evolutionArray[465115] = 1;
-    evolutionArray[464155] = 1;
+    unsigned int initialColor = 0xFFFFFFFF;
+    generateAntDecisions( "RL", 0, 0, 1, 0, initialColor ); // base Langton Ant
+    //generateAntDecisions( "RLR", 195, 285, 1, 0.9, initialColor );
+    //generateAntDecisions( "LLRR", 195, 285, 1, 0.9, initialColor );
+    //generateAntDecisions( "LRRRRRLLR", 45, 255, 1, 0.8, initialColor );
+    //generateAntDecisions( "RRLLLRLLLRRR", 0, 60, 1, 0.9, initialColor );
+    //generateAntDecisions( "RRLLLRLLLLLLLLL", 195, 285, 0.7, 0.9, initialColor );
+
+    std::fill_n( board, boardSize, initialColor );
 
 }
 
@@ -77,8 +69,7 @@ GameWorld::GameWorld() :
 GameWorld::~GameWorld() {
     unloadResources();
     std::cout << "destroying game world..." << std::endl;
-    delete[] evolutionArray;
-    delete[] newGeneration;
+    delete[] board;
 }
 
 /**
@@ -105,59 +96,66 @@ void GameWorld::inputAndUpdate() {
     startColumn = (columns / 2) - (boardWidth / cellWidth / 2);
     endColumn = startColumn + (boardWidth / cellWidth);
 
-    if ( IsKeyPressed( KEY_UP ) ) {
-        timeToWait += 0.05;
+    ant.setStartLine( startLine );
+    ant.setStartColumn( startColumn );
+    ant.setCellWidth( cellWidth );
+
+    if ( IsKeyDown( KEY_UP ) ) {
+        timeToWait *= 2;
         if ( timeToWait > 2.0 ) {
             timeToWait = 2.0;
         }
-    } else if ( IsKeyPressed( KEY_DOWN ) ) {
-        timeToWait -= 0.05;
-        if ( timeToWait < 0.05 ) {
-            timeToWait = 0.05;
+    } else if ( IsKeyDown( KEY_DOWN ) ) {
+        timeToWait /= 2;
+        if ( timeToWait < 0.000001 ) {
+            timeToWait = 0.000001;
+        }
+    }
+
+    if ( IsKeyDown( KEY_RIGHT ) ) {
+        antMovesPerStep += 10;        
+    } else if ( IsKeyDown( KEY_LEFT ) ) {
+        antMovesPerStep -= 10;
+        if ( antMovesPerStep == 0 ) {
+            antMovesPerStep = 1;
         }
     }
 
     if ( state == GameState::RUNNING && currentTime >= timeToWait ) {
-        createNewGeneration();
+        nextStep();
         currentTime = 0;
     } else {
         currentTime += GetFrameTime();
     }
 
-    if ( IsMouseButtonDown( MOUSE_BUTTON_LEFT ) && state != GameState::RUNNING ) {
-        int line = GetMouseY() / cellWidth + startLine;
-        int column = GetMouseX() / cellWidth + startColumn;
-        if ( evolutionArray[line*columns + column] == 0 ) {
-            evolutionArray[line*columns + column] = 1;
-            //std::cout << "added: " << line*columns+column << std::endl;
-        }
-    } else if ( IsMouseButtonDown( MOUSE_BUTTON_RIGHT ) && state != GameState::RUNNING ) {
-        int line = GetMouseY() / cellWidth + startLine;
-        int column = GetMouseX() / cellWidth + startColumn;
-        if ( evolutionArray[line*columns + column] == 1 ) {
-            evolutionArray[line*columns + column] = 0;
-            //std::cout << "removed: " << line*columns+column << std::endl;
-        }
-    }
-
-    if ( IsKeyPressed( KEY_R ) && state != GameState::IDLE ) {
-        std::copy( resetArray, resetArray+evolutionArraySize, evolutionArray );
+    if ( IsKeyPressed( KEY_R ) ) {
+        std::fill_n( board, boardSize, 0xFFFFFFFF );
+        ant.setLine( 479 );
+        ant.setColumn( 479 );
+        ant.setMoving( false );
+        currentMove = 0;
         state = GameState::IDLE;
     }
 
     if ( IsKeyPressed( KEY_SPACE ) ) {
         if ( state == GameState::IDLE ) {
-            std::copy( evolutionArray, evolutionArray+evolutionArraySize, resetArray );
             state = GameState::RUNNING;
+            ant.setMoving( true );
         } else if ( state == GameState::RUNNING ) {
             state = GameState::PAUSED;
+            ant.setMoving( false );
         } else if ( state == GameState::PAUSED ) {
             state = GameState::RUNNING;
+            ant.setMoving( true );
         }
     }
 
     if ( IsKeyPressed( KEY_G ) ) {
         drawGrid = !drawGrid;
+    }
+
+    if ( IsKeyPressed( KEY_S ) ) {
+        showInfo = !showInfo;
     }
 
 }
@@ -172,11 +170,11 @@ void GameWorld::draw() const {
 
     for ( int i = startLine; i < endLine; i++ ) {
         for ( int j = startColumn; j <= endColumn; j++ ) {
-            if ( evolutionArray[i*columns + j] ) {
+            if ( board[i*columns + j] ) {
                 DrawRectangle( 
                     j * cellWidth - startColumn * cellWidth, 
                     i * cellWidth - startLine * cellWidth, 
-                    cellWidth, cellWidth, BLACK );
+                    cellWidth, cellWidth, GetColor( board[i*columns + j] ) );
             }
         }
     }
@@ -199,7 +197,15 @@ void GameWorld::draw() const {
         }
     }
 
-    DrawText( TextFormat( "%.2f segundos para a próxima geração.", timeToWait ), 20, 20, 20, BLUE );
+    ant.draw();
+
+    if ( showInfo ) {
+        DrawRectangle( 10, 10, 600, 75, Fade( WHITE, 0.8 ) );
+        DrawRectangleLines( 10, 10, 600, 75, BLACK );
+        DrawText( TextFormat( "%f segundo(s) para o próximo passo (impreciso).", timeToWait ), 20, 20, 20, BLUE );
+        DrawText( TextFormat( "%d movimento(s) por passo.", antMovesPerStep ), 20, 40, 20, BLUE );
+        DrawText( TextFormat( "movimento atual: %d", currentMove ), 20, 60, 20, BLUE );
+    }
 
     EndDrawing();
 
@@ -209,53 +215,35 @@ int GameWorld::getBoardWidth() const {
     return boardWidth;
 }
 
-void GameWorld::createNewGeneration() {
-
-    for ( int i = 0; i < lines; i++ ) {
-        for ( int j = 0; j < columns; j++ ) {
-            int p = i*columns+j;
-            int n = countNeighbors( i, j );
-            if ( evolutionArray[p] ) {
-                if ( n <= 1 || n >= 4 ) {
-                    newGeneration[p] = 0;
-                } else {
-                    newGeneration[p] = 1;
-                }
-            } else {
-                if ( n == 3 ) {
-                    newGeneration[p] = 1;
-                } else {
-                    newGeneration[p] = 0;
-                }
-            }
+void GameWorld::nextStep() {
+    for ( int i = 0; i < antMovesPerStep; i++ ) {
+        if ( ant.isMoving() ) {
+            currentMove++;
+            ant.move( board, lines, columns );
         }
     }
-
-    std::copy( newGeneration, newGeneration+evolutionArraySize, evolutionArray );
-
 }
 
-int GameWorld::countNeighbors( int line, int column ) {
+void GameWorld::generateAntDecisions( 
+    std::string turns, 
+    int startHue, 
+    int endHue, 
+    float saturation, 
+    float value, 
+    unsigned int initialColor ) {
+    
+    unsigned int color;
+    size_t steps = turns.size();
+    int hueStep = abs( endHue - startHue ) / steps;
 
-    int count = 0;
-
-    for ( int i = line-1; i < line + 2; i++ ) {
-        for ( int j = column-1; j < column + 2; j++ ) {
-            if ( i >= 0 &&
-                 i < lines && 
-                 j >= 0 &&
-                 j < columns &&
-                 evolutionArray[i*columns+j] ) {
-                count++;
-            }
+    for ( size_t i = 0; i < steps; i++ ) {
+        if ( i == 0 ) {
+            color = initialColor;
+        } else {
+            color = ColorToInt( ColorFromHSV( startHue + (i-1) * hueStep, saturation, value ) );
         }
+        ant.addDecision( Decision( color, turns[i] == 'L' ? TurnType::TURN_LEFT : TurnType::TURN_RIGHT ) );
     }
-
-    if ( evolutionArray[line*columns+column] ) {
-        count--;
-    }
-
-    return count;
 
 }
 
