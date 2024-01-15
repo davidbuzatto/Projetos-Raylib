@@ -9,7 +9,6 @@
 
 #include <vector>
 #include <Drawable.h>
-#include <Direction.h>
 #include <Decision.h>
 
 class Ant : public virtual Drawable {

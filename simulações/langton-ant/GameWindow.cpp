@@ -8,12 +8,6 @@
 #include <GameWindow.h>
 
 #include <iostream>
-#include <fmt/format.h>
-#include <cmath>
-#include <string>
-#include <cstring>
-#include <ctime>
-#include <cassert>
 #include <raylib.h>
 
 /**

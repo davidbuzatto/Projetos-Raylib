@@ -9,7 +9,6 @@
 #pragma once
 
 #include <string>
-#include <raylib.h>
 #include <Drawable.h>
 #include <GameState.h>
 #include <Ant.h>

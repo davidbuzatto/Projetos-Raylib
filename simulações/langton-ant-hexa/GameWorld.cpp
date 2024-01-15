@@ -9,14 +9,8 @@
 
 #include <vector>
 #include <iostream>
-#include <fmt/format.h>
 #include <cmath>
 #include <string>
-#include <cstring>
-#include <ctime>
-#include <cassert>
-#include <algorithm>
-#include <iterator>
 #include <raylib.h>
 
 #include <GameState.h>
@@ -49,7 +43,7 @@ GameWorld::GameWorld() :
     boardSize = columns * lines;
     board = new unsigned int[boardSize];
 
-    drawGrid = false;
+    drawGrid = true;
 
     currentTime = 0;
     timeToWait = 0.5;

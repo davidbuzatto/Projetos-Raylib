@@ -6,18 +6,6 @@
  * @copyright Copyright (c) 2024
  */
 #include <Decision.h>
-
-#include <iostream>
-#include <fmt/format.h>
-#include <cmath>
-#include <string>
-#include <cstring>
-#include <ctime>
-#include <cassert>
-#include <algorithm>
-#include <iterator>
-#include <raylib.h>
-
 #include <TurnType.h>
 
 Decision::Decision( unsigned int color, TurnType turnType ) : 
