@@ -21,7 +21,7 @@ GameWorld::GameWorld() :
         boardWidth( 960 ),
         state( GameState::IDLE ),
         ant( Ant( 479, 479 ) ),
-        antMovesPerStep( 100 ),
+        antMovesPerStep( 1 ),
         initialColor( 0xFFFFFFFF ),
         showInfo( true ) {
 
@@ -50,6 +50,7 @@ GameWorld::GameWorld() :
     //generateAntDecisions( "LRRRRRLLR", 45, 255, 1, 0.8, initialColor );
     //generateAntDecisions( "RRLLLRLLLRRR", 0, 60, 1, 0.9, initialColor );
     //generateAntDecisions( "RRLLLRLLLLLLLLL", 195, 285, 0.7, 0.9, initialColor );
+    //generateAntDecisions( "RRLLLRLLLLLLLLL", 285, 195, 0.7, 0.9, initialColor );
 
     std::fill_n( board, boardSize, initialColor );
 
@@ -148,6 +149,7 @@ void GameWorld::inputAndUpdate() {
 
     if ( IsKeyPressed( KEY_S ) ) {
         showInfo = !showInfo;
+        ant.setDrawDecisionCycle( showInfo );
     }
 
 }
@@ -227,6 +229,10 @@ void GameWorld::generateAntDecisions(
     unsigned int color;
     size_t steps = turns.size();
     int hueStep = abs( endHue - startHue ) / steps;
+
+    if ( startHue > endHue ) {
+        hueStep = -hueStep;
+    }
 
     for ( size_t i = 0; i < steps; i++ ) {
         if ( i == 0 ) {

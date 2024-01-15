@@ -1,5 +1,5 @@
 /**
- * @file GameWorld.cpp
+ * @file Decision.cpp
  * @author Prof. Dr. David Buzatto
  * @brief Decision class implementation.
  * 

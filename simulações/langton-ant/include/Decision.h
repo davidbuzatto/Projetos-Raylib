@@ -1,5 +1,5 @@
 /**
- * @file GameWorld.h
+ * @file Decision.h
  * @author Prof. Dr. David Buzatto
  * @brief Decision class declaration.
  * 

@@ -9,3 +9,4 @@
 
 double toRadians( double degrees );
 double toDegrees( double radians );
+int getLuminance( unsigned int argb );

@@ -50,40 +50,23 @@ GameWorld::GameWorld() :
 
     currentMove = 0;
     
-    /*std::vector<std::string> d;
-    ant.setLine( 30 );
+    /*ant.setLine( 30 );
     ant.setColumn( columns / 2 );
-    d.push_back( "L2" );
-    d.push_back( "N" );
-    d.push_back( "N" );
-    d.push_back( "L1" );
-    d.push_back( "L2" );
-    d.push_back( "L1" );
-    generateAntDecisions( d, 0, 60, 1, 0.9, initialColor );*/
+    generateAntDecisions( 
+        std::vector<std::string>{ "L2", "N", "N", "L1", "L2", "L1" }, 
+        0, 60, 1, 0.9, initialColor );*/
 
-    /*std::vector<std::string> d;
-    d.push_back( "L1" );
-    d.push_back( "L2" );
-    d.push_back( "N" );
-    d.push_back( "U" );
-    d.push_back( "L2" );
-    d.push_back( "L1" );
-    d.push_back( "R2" );
-    generateAntDecisions( d, 180, 270, 1, 0.9, initialColor );*/
+    /*generateAntDecisions( 
+        std::vector<std::string>{ "L1", "L1", "R1", "R1" }, 
+        60, 150, 1, 0.9, initialColor );*/
 
-    /*std::vector<std::string> d;
-    d.push_back( "R1" );
-    d.push_back( "R2" );
-    d.push_back( "N" );
-    d.push_back( "U" );
-    d.push_back( "R2" );
-    d.push_back( "R1" );
-    d.push_back( "L2" );
-    generateAntDecisions( d, 60, 150, 1, 0.9, initialColor );*/
+    /*generateAntDecisions( 
+        std::vector<std::string>{ "L1", "L2", "N", "U", "L2", "L1", "R2" }, 
+        180, 270, 1, 0.9, initialColor );*/
 
     generateAntDecisions( 
-        std::vector<std::string>{ "L1", "L1", "R1", "R1" }, 
-        60, 150, 1, 0.9, initialColor );
+        std::vector<std::string>{ "R1", "R2", "N", "U", "R2", "R1", "L2" }, 
+        60, 150, 1, 0.8, initialColor );
 
     std::fill_n( board, boardSize, initialColor );
 
@@ -159,6 +142,7 @@ void GameWorld::inputAndUpdate() {
 
     if ( IsKeyPressed( KEY_S ) ) {
         showInfo = !showInfo;
+        ant.setDrawDecisionCycle( showInfo );
     }
 
 }
@@ -230,6 +214,10 @@ void GameWorld::generateAntDecisions(
     unsigned int color;
     size_t steps = turns.size();
     int hueStep = abs( endHue - startHue ) / steps;
+
+    if ( startHue > endHue ) {
+        hueStep = -hueStep;
+    }
 
     for ( size_t i = 0; i < steps; i++ ) {
         if ( i == 0 ) {

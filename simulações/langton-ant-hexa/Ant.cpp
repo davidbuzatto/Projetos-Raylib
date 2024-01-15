@@ -1,5 +1,5 @@
 /**
- * @file GameWorld.cpp
+ * @file Ant.cpp
  * @author Prof. Dr. David Buzatto
  * @brief Ant class implementation.
  * 
@@ -8,23 +8,17 @@
 #include <Ant.h>
 
 #include <iostream>
-#include <fmt/format.h>
 #include <cmath>
-#include <string>
-#include <cstring>
-#include <ctime>
-#include <cassert>
-#include <algorithm>
-#include <iterator>
 #include <raylib.h>
-#include <utils.h>
 
 #include <Direction.h>
 #include <TurnType.h>
+#include <utils.h>
 
 Ant::Ant() : 
         angle( 300 ),
-        moving( false ) {
+        moving( false ),
+        drawDecisionCycle( true ) {
 }
 
 Ant::~Ant() {
@@ -32,6 +26,156 @@ Ant::~Ant() {
 }
 
 void Ant::draw() const {
+
+    if ( drawDecisionCycle ) {
+
+        int dCellWidth = 30;
+        int dCellSpacing = 20;
+        int margin = 10;
+        int iMargin = 20;
+        int directionSize = dCellWidth * 0.9;
+
+        DrawRectangle( 
+            GetScreenWidth() - margin - iMargin * 2 - dCellWidth / 2 - dCellWidth, 
+            margin, 
+            iMargin * 2 + dCellWidth + dCellWidth / 2, 
+            GetScreenHeight() - margin * 2, 
+            Fade( WHITE, 0.8 ) );
+        DrawRectangleLines( 
+            GetScreenWidth() - margin - iMargin * 2 - dCellWidth / 2 - dCellWidth, 
+            margin, 
+            iMargin * 2 + dCellWidth + dCellWidth / 2, 
+            GetScreenHeight() - margin * 2, 
+            BLACK );
+
+        Vector2 prev;
+        Vector2 first;
+
+        for ( unsigned int i = 0; i < decisionCycle.size(); i++ ) {
+
+            const Decision *d = &decisionCycle[i];
+            Vector2 vd( 
+                GetScreenWidth() - margin - iMargin - dCellWidth - dCellWidth / 2, 
+                margin + iMargin + dCellWidth / 2 + dCellWidth * i + dCellSpacing * i );
+
+            if ( i == 0 ) {
+                first = vd;
+            }
+
+            int angle = d->getTurnType() - 90;
+            int dx = directionSize * cos( toRadians( angle ) );
+            int dy = directionSize * sin( toRadians( angle ) );
+            int xOffset = 0;
+            int ax1 = 0;
+            int ay1 = 0;
+            int ax2 = 0;
+            int ay2 = 0;
+
+            switch ( d->getTurnType() ) {
+                case TurnType::TURN_0:
+                    xOffset = -dCellWidth / 4;
+                    ax1 = -5;
+                    ay1 = 5;
+                    ax2 = 5;
+                    ay2 = 5;
+                    break;
+                case TurnType::TURN_60:
+                    ax1 = -5;
+                    ay1 = -2;
+                    ax2 = -2;
+                    ay2 = 7;
+                    break;
+                case TurnType::TURN_120:
+                    ax1 = -2;
+                    ay1 = -7;
+                    ax2 = -5;
+                    ay2 = 2;
+                    break;
+                case TurnType::TURN_180:
+                    xOffset = -dCellWidth / 4;
+                    ax1 = -5;
+                    ay1 = -5;
+                    ax2 = 5;
+                    ay2 = -5;
+                    break;
+                case TurnType::TURN_240:
+                    ax1 = 2;
+                    ay1 = -7;
+                    ax2 = 5;
+                    ay2 = 2;
+                    break;
+                case TurnType::TURN_300:
+                    ax1 = 5;
+                    ay1 = -2;
+                    ax2 = 2;
+                    ay2 = 7;
+                    break;
+            }
+
+            DrawLine( vd.x + dCellWidth / 2 + xOffset,
+                      vd.y + dCellWidth / 2, 
+                      vd.x + dCellWidth / 2 + xOffset + dx, 
+                      vd.y + dCellWidth / 2 + dy, BLACK );
+            DrawLine( vd.x + dCellWidth / 2 + xOffset + dx, 
+                      vd.y + dCellWidth / 2 + dy,
+                      vd.x + dCellWidth / 2 + xOffset + dx + ax1, 
+                      vd.y + dCellWidth / 2 + dy + ay1, BLACK );
+            DrawLine( vd.x + dCellWidth / 2 + xOffset + dx, 
+                      vd.y + dCellWidth / 2 + dy,
+                      vd.x + dCellWidth / 2 + xOffset + dx + ax2, 
+                      vd.y + dCellWidth / 2 + dy + ay2, BLACK );
+
+            DrawRectangle( vd.x, vd.y, dCellWidth, dCellWidth, GetColor( d->getColor() ) );
+            DrawRectangleLines( vd.x, vd.y, dCellWidth, dCellWidth, BLACK );
+
+            std::string label;
+            switch ( d->getTurnType() ) {
+                case TurnType::TURN_0:
+                    label = "N";
+                    break;
+                case TurnType::TURN_60:
+                    label = "R1";
+                    break;
+                case TurnType::TURN_120:
+                    label = "R2";
+                    break;
+                case TurnType::TURN_180:
+                    label = "U";
+                    break;
+                case TurnType::TURN_240:
+                    label = "L2";
+                    break;
+                case TurnType::TURN_300:
+                    label = "L1";
+                    break;
+            }
+            const char *cLabel = label.c_str();
+            int w = MeasureText( cLabel, 20 );
+            DrawText( cLabel, vd.x + dCellWidth / 2 - w / 2, 
+                      vd.y + dCellWidth / 2 - 10, 20,
+                      getLuminance( d->getColor() ) < 123 ? WHITE : BLACK );
+
+            if ( i != 0 ) {
+                DrawLine( prev.x + dCellWidth / 2, prev.y + dCellWidth, vd.x + dCellWidth / 2, vd.y, BLACK );
+                DrawLine( vd.x + dCellWidth / 2, vd.y, vd.x + dCellWidth / 2 - 5, vd.y - 5, BLACK );
+                DrawLine( vd.x + dCellWidth / 2, vd.y, vd.x + dCellWidth / 2 + 5, vd.y - 5, BLACK );
+            }
+
+            prev = vd;
+
+            if ( i == decisionCycle.size() - 1 ) {
+                DrawLine( vd.x + dCellWidth / 2, vd.y + dCellWidth, vd.x + dCellWidth / 2, vd.y + dCellWidth + dCellWidth / 2, BLACK );
+                DrawLine( vd.x + dCellWidth / 2, vd.y + dCellWidth + dCellWidth / 2, vd.x + dCellWidth + dCellWidth / 2, vd.y + dCellWidth + dCellWidth / 2, BLACK );
+                DrawLine( vd.x + dCellWidth + dCellWidth / 2, vd.y + dCellWidth + dCellWidth / 2, first.x + dCellWidth + dCellWidth / 2, first.y - dCellWidth / 2, BLACK );
+                DrawLine( first.x + dCellWidth + dCellWidth / 2, first.y - dCellWidth / 2, first.x + dCellWidth / 2, first.y - dCellWidth / 2, BLACK );
+                DrawLine( first.x + dCellWidth / 2, first.y - dCellWidth / 2, first.x + dCellWidth / 2, first.y, BLACK );
+                DrawLine( first.x + dCellWidth / 2, first.y, first.x + dCellWidth / 2 - 5, first.y - 5, BLACK );
+                DrawLine( first.x + dCellWidth / 2, first.y, first.x + dCellWidth / 2 + 5, first.y - 5, BLACK );
+            }
+
+        }
+
+    }
 
     Vector2 p( column * (cellRadius + cellRadius2), 
                line * 2 * cellApothema - ( column % 2 == 0 ? 0 : cellApothema ) );
@@ -59,7 +203,6 @@ void Ant::move( unsigned int *board, int lines, int columns ) {
 
             if ( v == d->getColor() ) {
                 turn( d->getTurnType() );
-                //turn( 0 );
                 board[p] = n->getColor();
             }
             
@@ -140,7 +283,10 @@ bool Ant::isMoving() {
     return moving;
 }
 
+void Ant::setDrawDecisionCycle( bool drawDecisionCycle ) {
+    this->drawDecisionCycle = drawDecisionCycle;
+}
+
 void Ant::turn( int angle ) {
     this->angle = ( this->angle + angle ) % 360;
-    //this->angle = angle;
 }

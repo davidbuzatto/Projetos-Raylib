@@ -15,3 +15,9 @@ double toRadians( double degrees ) {
 double toDegrees( double radians ) {
     return radians * 180.0 / PI;
 }
+
+int getLuminance( unsigned int argb ) {
+    return (   77  * ((argb>>16)&255) 
+             + 150 * ((argb>>8)&255) 
+             + 29  * ((argb)&255))>>8;
+}

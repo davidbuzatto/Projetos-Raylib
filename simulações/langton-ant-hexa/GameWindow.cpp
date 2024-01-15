@@ -1,5 +1,5 @@
 /**
- * @file GameWorld.cpp
+ * @file GameWindow.cpp
  * @author Prof. Dr. David Buzatto
  * @brief GameWindow class implementation.
  * 

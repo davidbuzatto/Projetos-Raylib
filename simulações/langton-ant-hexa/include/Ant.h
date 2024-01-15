@@ -1,5 +1,5 @@
 /**
- * @file GameWorld.h
+ * @file Ant.h
  * @author Prof. Dr. David Buzatto
  * @brief Ant class declaration.
  * 
@@ -23,6 +23,7 @@ class Ant : public virtual Drawable {
     bool moving;
 
     std::vector<Decision> decisionCycle;
+    bool drawDecisionCycle;
 
 public:
 
@@ -47,6 +48,7 @@ public:
     void setCellApothema( float cellApothema );
     void setMoving( bool moving );
     bool isMoving();
+    void setDrawDecisionCycle( bool drawDecisionCycle );
 
     void addDecision( Decision decision ) {
         decisionCycle.push_back( decision );
