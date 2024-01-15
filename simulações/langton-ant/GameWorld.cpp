@@ -30,6 +30,7 @@ GameWorld::GameWorld() :
         state( GameState::IDLE ),
         ant( Ant( 479, 479 ) ),
         antMovesPerStep( 100 ),
+        initialColor( 0xFFFFFFFF ),
         showInfo( true ) {
 
     loadResources();
@@ -51,7 +52,6 @@ GameWorld::GameWorld() :
 
     currentMove = 0;
 
-    unsigned int initialColor = 0xFFFFFFFF;
     generateAntDecisions( "RL", 0, 0, 1, 0, initialColor ); // base Langton Ant
     //generateAntDecisions( "RLR", 195, 285, 1, 0.9, initialColor );
     //generateAntDecisions( "LLRR", 195, 285, 1, 0.9, initialColor );
@@ -107,8 +107,8 @@ void GameWorld::inputAndUpdate() {
         }
     } else if ( IsKeyDown( KEY_DOWN ) ) {
         timeToWait /= 2;
-        if ( timeToWait < 0.000001 ) {
-            timeToWait = 0.000001;
+        if ( timeToWait < 0.001 ) {
+            timeToWait = 0.001;
         }
     }
 
@@ -116,7 +116,7 @@ void GameWorld::inputAndUpdate() {
         antMovesPerStep += 10;        
     } else if ( IsKeyDown( KEY_LEFT ) ) {
         antMovesPerStep -= 10;
-        if ( antMovesPerStep == 0 ) {
+        if ( antMovesPerStep <= 0 ) {
             antMovesPerStep = 1;
         }
     }
@@ -129,7 +129,7 @@ void GameWorld::inputAndUpdate() {
     }
 
     if ( IsKeyPressed( KEY_R ) ) {
-        std::fill_n( board, boardSize, 0xFFFFFFFF );
+        std::fill_n( board, boardSize, initialColor );
         ant.setLine( 479 );
         ant.setColumn( 479 );
         ant.setMoving( false );
@@ -202,7 +202,7 @@ void GameWorld::draw() const {
     if ( showInfo ) {
         DrawRectangle( 10, 10, 600, 75, Fade( WHITE, 0.8 ) );
         DrawRectangleLines( 10, 10, 600, 75, BLACK );
-        DrawText( TextFormat( "%f segundo(s) para o próximo passo (impreciso).", timeToWait ), 20, 20, 20, BLUE );
+        DrawText( TextFormat( "%.3f segundo(s) para o próximo passo (impreciso).", timeToWait ), 20, 20, 20, BLUE );
         DrawText( TextFormat( "%d movimento(s) por passo.", antMovesPerStep ), 20, 40, 20, BLUE );
         DrawText( TextFormat( "movimento atual: %d", currentMove ), 20, 60, 20, BLUE );
     }

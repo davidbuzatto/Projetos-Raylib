@@ -44,6 +44,7 @@ class GameWorld : public virtual Drawable {
     int antMovesPerStep;
     int currentMove;
 
+    unsigned int initialColor;
     bool showInfo;
 
 public:

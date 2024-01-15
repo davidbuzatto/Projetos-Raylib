@@ -28,12 +28,13 @@ GameWorld::GameWorld() :
         cellRadius( 4 ),
         boardWidth( 1300 ),
         state( GameState::IDLE ),
-        antMovesPerStep( 1 ),
+        antMovesPerStep( 100 ),
+        initialColor( ColorToInt( DARKGRAY ) ),
         showInfo( true ) {
 
     loadResources();
     std::cout << "creating game world..." << std::endl;
-
+    
     cellRadius2 = cellRadius/2;
     cellApothema = sqrt( cellRadius * cellRadius - cellRadius2 * cellRadius2 );
 
@@ -48,15 +49,12 @@ GameWorld::GameWorld() :
     boardSize = columns * lines;
     board = new unsigned int[boardSize];
 
-    drawGrid = true;
+    drawGrid = false;
 
     currentTime = 0;
     timeToWait = 0.5;
 
     currentMove = 0;
-
-    //unsigned int initialColor = 0x000000FF;
-    unsigned int initialColor = ColorToInt( DARKGRAY );
     
     /*std::vector<std::string> d;
     ant.setLine( 30 );
@@ -79,7 +77,7 @@ GameWorld::GameWorld() :
     d.push_back( "R2" );
     generateAntDecisions( d, 180, 270, 1, 0.9, initialColor );*/
 
-    std::vector<std::string> d;
+    /*std::vector<std::string> d;
     d.push_back( "R1" );
     d.push_back( "R2" );
     d.push_back( "N" );
@@ -87,7 +85,11 @@ GameWorld::GameWorld() :
     d.push_back( "R2" );
     d.push_back( "R1" );
     d.push_back( "L2" );
-    generateAntDecisions( d, 60, 150, 1, 0.9, initialColor );
+    generateAntDecisions( d, 60, 150, 1, 0.9, initialColor );*/
+
+    generateAntDecisions( 
+        std::vector<std::string>{ "L1", "L1", "R1", "R1" }, 
+        60, 150, 1, 0.9, initialColor );
 
     std::fill_n( board, boardSize, initialColor );
 
@@ -114,8 +116,8 @@ void GameWorld::inputAndUpdate() {
         }
     } else if ( IsKeyDown( KEY_DOWN ) ) {
         timeToWait /= 2;
-        if ( timeToWait < 0.000001 ) {
-            timeToWait = 0.000001;
+        if ( timeToWait < 0.001 ) {
+            timeToWait = 0.001;
         }
     }
 
@@ -123,7 +125,7 @@ void GameWorld::inputAndUpdate() {
         antMovesPerStep += 10;        
     } else if ( IsKeyDown( KEY_LEFT ) ) {
         antMovesPerStep -= 10;
-        if ( antMovesPerStep == 0 ) {
+        if ( antMovesPerStep <= 0 ) {
             antMovesPerStep = 1;
         }
     }
@@ -136,7 +138,7 @@ void GameWorld::inputAndUpdate() {
     }
 
     if ( IsKeyPressed( KEY_R ) ) {
-        std::fill_n( board, boardSize, 0xFFFFFFFF );
+        std::fill_n( board, boardSize, initialColor );
         ant.setLine( lines / 2 );
         ant.setColumn( columns / 2 );
         ant.setMoving( false );
@@ -201,7 +203,7 @@ void GameWorld::draw() const {
     if ( showInfo ) {
         DrawRectangle( 10, 10, 600, 75, Fade( WHITE, 0.8 ) );
         DrawRectangleLines( 10, 10, 600, 75, BLACK );
-        DrawText( TextFormat( "%f segundo(s) para o próximo passo (impreciso).", timeToWait ), 20, 20, 20, BLUE );
+        DrawText( TextFormat( "%.3f segundo(s) para o próximo passo (impreciso).", timeToWait ), 20, 20, 20, BLUE );
         DrawText( TextFormat( "%d movimento(s) por passo.", antMovesPerStep ), 20, 40, 20, BLUE );
         DrawText( TextFormat( "movimento atual: %d", currentMove ), 20, 60, 20, BLUE );
     }
