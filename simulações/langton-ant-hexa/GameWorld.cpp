@@ -58,7 +58,7 @@ GameWorld::GameWorld() :
     //unsigned int initialColor = 0x000000FF;
     unsigned int initialColor = ColorToInt( DARKGRAY );
     
-    std::vector<std::string> d;
+    /*std::vector<std::string> d;
     ant.setLine( 30 );
     ant.setColumn( columns / 2 );
     d.push_back( "L2" );
@@ -67,7 +67,7 @@ GameWorld::GameWorld() :
     d.push_back( "L1" );
     d.push_back( "L2" );
     d.push_back( "L1" );
-    generateAntDecisions( d, 0, 60, 1, 0.9, initialColor );
+    generateAntDecisions( d, 0, 60, 1, 0.9, initialColor );*/
 
     /*std::vector<std::string> d;
     d.push_back( "L1" );
@@ -79,7 +79,7 @@ GameWorld::GameWorld() :
     d.push_back( "R2" );
     generateAntDecisions( d, 180, 270, 1, 0.9, initialColor );*/
 
-    /*std::vector<std::string> d;
+    std::vector<std::string> d;
     d.push_back( "R1" );
     d.push_back( "R2" );
     d.push_back( "N" );
@@ -87,7 +87,7 @@ GameWorld::GameWorld() :
     d.push_back( "R2" );
     d.push_back( "R1" );
     d.push_back( "L2" );
-    generateAntDecisions( d, 60, 150, 1, 0.9, initialColor );*/
+    generateAntDecisions( d, 60, 150, 1, 0.9, initialColor );
 
     std::fill_n( board, boardSize, initialColor );
 
