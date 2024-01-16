@@ -1,7 +1,7 @@
 /**
  * @file main.cpp
  * @author Prof. Dr. David Buzatto
- * @brief Path with Cubic Bèzier guide. The code is a mess...
+ * @brief Path with Cubic Bézier guide. The code is a mess...
  * 
  * @copyright Copyright (c) 2024
  */
@@ -22,7 +22,7 @@ int main( void ) {
     const int screenHeight = 800;
     
     SetConfigFlags( FLAG_MSAA_4X_HINT );
-    InitWindow( screenWidth, screenHeight, "Caminho com Guias Bèzier" );
+    InitWindow( screenWidth, screenHeight, "Caminho com Guias Bézier" );
     InitAudioDevice();
     SetTargetFPS( 60 );    
 
