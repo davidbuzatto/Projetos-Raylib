@@ -27,10 +27,8 @@ class GameWorld : public virtual Drawable {
     unsigned int *board;
     int boardSize;    
 
-    int startLine;
-    int endLine;
-    int startColumn;
-    int endColumn;
+    const int MAX_CELL_RADIUS = 48;
+    const int MIN_CELL_RADIUS = 1;
 
     bool drawGrid;
 
@@ -72,6 +70,7 @@ public:
 private:
 
     void nextStep();
+    void updateBoard();
 
     void generateAntDecisions( 
         std::vector<std::string> turns, 

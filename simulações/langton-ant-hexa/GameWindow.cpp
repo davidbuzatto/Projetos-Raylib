@@ -14,7 +14,7 @@
  * @brief Construct a new GameWindow object
  */
 GameWindow::GameWindow() : 
-        windowTitle( "Formiga da Langton" ) {
+        windowTitle( "Formiga da Langton Hexagonal" ) {
 
     std::cout << "creating game window..." << std::endl;
     

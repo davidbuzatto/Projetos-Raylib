@@ -16,11 +16,11 @@
 #include <utils.h>
 
 Ant::Ant( int line, int column ) : 
-        line( line ),
-        column( column ),
-        goingTo( Direction::LEFT ),
-        moving( false ),
-        drawDecisionCycle( true ) {
+    line( line ),
+    column( column ),
+    goingTo( Direction::LEFT ),
+    moving( false ),
+    drawDecisionCycle( true ) {
 }
 
 Ant::~Ant() {
@@ -115,10 +115,30 @@ void Ant::draw() const {
 
     }
 
-    DrawCircle( 
-        column * cellWidth + cellWidth / 2 - startColumn * cellWidth, 
-        line * cellWidth + cellWidth/2 - startLine * cellWidth, 
-        cellWidth / 4 < .5 ? 1 : cellWidth / 4, MAROON );
+    int angle = 0;
+    switch ( goingTo ) {
+        case Direction::LEFT:
+            angle = 180;
+            break;
+        case Direction::RIGHT:
+            angle = 0;
+            break;
+        case Direction::UP:
+            angle = 270;
+            break;
+        case Direction::DOWN:
+            angle = 90;
+            break;
+    }
+    int radius = cellWidth / 1.5;
+
+    Vector2 p( column * cellWidth + cellWidth / 2 - startColumn * cellWidth, 
+               line * cellWidth + cellWidth / 2 - startLine * cellWidth );
+    Vector2 pe( p.x + radius * cos( toRadians( angle ) ), 
+                p.y + radius * sin( toRadians( angle ) ) );
+    DrawLineEx( p, pe, radius / 10, MAROON );
+    DrawPoly( pe, 3, radius / 4, angle, MAROON );
+    DrawCircle( p.x, p.y, radius / 2 < .5 ? 1 : radius / 2, MAROON );
 
 }
 
@@ -243,4 +263,12 @@ void Ant::turnLeft() {
             goingTo = Direction::RIGHT;
             break;
     }
+}
+
+void Ant::setGoingTo( Direction goingTo ) {
+    this->goingTo = goingTo;
+}
+
+void Ant::addDecision( Decision decision ) {
+    decisionCycle.push_back( decision );
 }

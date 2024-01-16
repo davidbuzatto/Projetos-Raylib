@@ -49,12 +49,10 @@ public:
     void setMoving( bool moving );
     bool isMoving();
     void setDrawDecisionCycle( bool drawDecisionCycle );
-
-    void addDecision( Decision decision ) {
-        decisionCycle.push_back( decision );
-    }
+    void setAngle( int angle );
+    void addDecision( Decision decision );
 
 private:
     void turn( int angle );
-
+    
 };

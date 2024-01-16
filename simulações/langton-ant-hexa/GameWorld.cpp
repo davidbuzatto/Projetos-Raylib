@@ -20,7 +20,10 @@
  */
 GameWorld::GameWorld() : 
         cellRadius( 16 ),
-        boardWidth( 1300 ),
+        boardWidth( 960 ),
+        board( nullptr ),
+        drawGrid( true ),
+        timeToWait( 0.5 ),
         state( GameState::IDLE ),
         antMovesPerStep( 1 ),
         initialColor( ColorToInt( DARKGRAY ) ),
@@ -29,30 +32,11 @@ GameWorld::GameWorld() :
     loadResources();
     std::cout << "creating game world..." << std::endl;
     
-    cellRadius2 = cellRadius/2;
-    cellApothema = sqrt( cellRadius * cellRadius - cellRadius2 * cellRadius2 );
-
-    lines = boardWidth / (cellApothema*2) + 2;
-    columns = boardWidth / (cellRadius*1.5) + 2;
-
-    ant.setCellRadius( cellRadius );
-    ant.setCellApothema( cellApothema );
-    ant.setLine( lines / 2 );
-    ant.setColumn( columns / 2 );
+    updateBoard();
     
-    boardSize = columns * lines;
-    board = new unsigned int[boardSize];
-
-    drawGrid = true;
-
-    currentTime = 0;
-    timeToWait = 0.5;
-
-    currentMove = 0;
-    
-    /*ant.setLine( 30 );
-    ant.setColumn( columns / 2 );
-    generateAntDecisions( 
+    //ant.setLine( 30 );
+    //ant.setColumn( columns / 2 );
+    /*generateAntDecisions( 
         std::vector<std::string>{ "L2", "N", "N", "L1", "L2", "L1" }, 
         0, 60, 1, 0.9, initialColor );*/
 
@@ -60,15 +44,13 @@ GameWorld::GameWorld() :
         std::vector<std::string>{ "L1", "L1", "R1", "R1" }, 
         315, 240, 1, 0.7, initialColor );*/
 
-    generateAntDecisions( 
-        std::vector<std::string>{ "L1", "L2", "N", "U", "L2", "L1", "R2" }, 
-        180, 270, 1, 0.9, initialColor );
-
     /*generateAntDecisions( 
-        std::vector<std::string>{ "R1", "R2", "N", "U", "R2", "R1", "L2" }, 
-        60, 150, 1, 0.8, initialColor );*/
+        std::vector<std::string>{ "L1", "L2", "N", "U", "L2", "L1", "R2" }, 
+        180, 270, 1, 0.9, initialColor );*/
 
-    std::fill_n( board, boardSize, initialColor );
+    generateAntDecisions( 
+        std::vector<std::string>{ "R1", "R2", "N", "U", "R2", "R1", "L2" }, 
+        60, 150, 1, 0.8, initialColor );
 
 }
 
@@ -78,13 +60,30 @@ GameWorld::GameWorld() :
 GameWorld::~GameWorld() {
     unloadResources();
     std::cout << "destroying game world..." << std::endl;
-    delete[] board;
+    if ( board != nullptr ) {
+        delete[] board;
+    }
 }
 
 /**
  * @brief Reads user input and updates the state of the game.
  */
 void GameWorld::inputAndUpdate() {
+
+    int mw = GetMouseWheelMove();
+    if ( mw > 0 ) {
+        cellRadius += 2;
+        if ( cellRadius > MAX_CELL_RADIUS ) {
+            cellRadius = MAX_CELL_RADIUS;
+        }
+        updateBoard();
+    } else if ( mw < 0 ) {
+        cellRadius -= 2;
+        if ( cellRadius < MIN_CELL_RADIUS ) {
+            cellRadius = MIN_CELL_RADIUS;
+        }
+        updateBoard();
+    }
 
     if ( IsKeyDown( KEY_UP ) ) {
         timeToWait *= 2;
@@ -116,6 +115,7 @@ void GameWorld::inputAndUpdate() {
 
     if ( IsKeyPressed( KEY_R ) ) {
         std::fill_n( board, boardSize, initialColor );
+        ant.setAngle( 120 );
         ant.setLine( lines / 2 );
         ant.setColumn( columns / 2 );
         ant.setMoving( false );
@@ -153,11 +153,11 @@ void GameWorld::inputAndUpdate() {
 void GameWorld::draw() const {
 
     BeginDrawing();
-    ClearBackground( WHITE );
+    ClearBackground( GetColor( initialColor ) );
 
     for ( int i = 0; i < lines; i++ ) {
         for ( int j = 0; j <= columns; j++ ) {
-            if ( board[i*columns + j] ) {
+            if ( board[i*columns + j] != initialColor ) {
                 Vector2 v( j * (cellRadius + cellRadius2), i * 2 * cellApothema - ( j % 2 == 0 ? 0 : cellApothema ) );
                 DrawPoly( v, 6, cellRadius, 0, GetColor( board[i*columns + j] ) );
             }
@@ -246,6 +246,32 @@ void GameWorld::generateAntDecisions(
             ant.addDecision( Decision( color, TURN_300 ) );
         }
     }
+
+}
+
+void GameWorld::updateBoard() {
+
+    currentTime = 0;
+    currentMove = 0;
+
+    cellRadius2 = cellRadius/2;
+    cellApothema = sqrt( cellRadius * cellRadius - cellRadius2 * cellRadius2 );
+
+    lines = boardWidth / (cellApothema*2) + 2;
+    columns = boardWidth / (cellRadius*1.5) + 2;
+
+    ant.setAngle( 120 );
+    ant.setCellRadius( cellRadius );
+    ant.setCellApothema( cellApothema );
+    ant.setLine( lines / 2 );
+    ant.setColumn( columns / 2 );
+    
+    boardSize = columns * lines;
+    if ( board != nullptr ) {
+        delete[] board;
+    }
+    board = new unsigned int[boardSize];
+    std::fill_n( board, boardSize, initialColor );
 
 }
 

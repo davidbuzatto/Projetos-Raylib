@@ -38,6 +38,7 @@ void GameWindow::init() {
 
     std::cout << "initializing GUI..." << std::endl;
     
+    SetConfigFlags( FLAG_MSAA_4X_HINT );
     InitWindow( screenWidth, screenHeight, windowTitle.c_str() );
     SetTargetFPS( 60 ); 
 

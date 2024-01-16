@@ -11,14 +11,13 @@
 #include <cmath>
 #include <raylib.h>
 
-#include <Direction.h>
 #include <TurnType.h>
 #include <utils.h>
 
 Ant::Ant() : 
-        angle( 300 ),
-        moving( false ),
-        drawDecisionCycle( true ) {
+    angle( 120 ),
+    moving( false ),
+    drawDecisionCycle( true ) {
 }
 
 Ant::~Ant() {
@@ -128,8 +127,6 @@ void Ant::draw() const {
 
             DrawPoly( vc, 6, dCellWidth / 2 + 2, 0, GetColor( d->getColor() ) );
             DrawPolyLines( vc, 6, dCellWidth / 2 + 2, 0, BLACK );
-            /*DrawRectangle( vd.x, vd.y, dCellWidth, dCellWidth, GetColor( d->getColor() ) );
-            DrawRectangleLines( vd.x, vd.y, dCellWidth, dCellWidth, BLACK );*/
 
             std::string label;
             switch ( d->getTurnType() ) {
@@ -182,12 +179,11 @@ void Ant::draw() const {
 
     Vector2 p( column * (cellRadius + cellRadius2), 
                line * 2 * cellApothema - ( column % 2 == 0 ? 0 : cellApothema ) );
-    /*DrawLine( p.x, p.y, 
-              p.x + cellRadius * cos( toRadians( angle - 90 ) ), 
-              p.y + cellRadius * sin( toRadians( angle - 90 ) ), 
-              BLACK );*/
-    DrawCircle( p.x, p.y, 
-        cellRadius / 2 < .5 ? 1 : cellRadius / 2, MAROON );
+    Vector2 pe( p.x + cellRadius * cos( toRadians( angle - 90 ) ), 
+                p.y + cellRadius * sin( toRadians( angle - 90 ) ) );
+    DrawLineEx( p, pe, cellRadius / 10, MAROON );
+    DrawPoly( pe, 3, cellRadius / 4, angle - 90, MAROON );
+    DrawCircle( p.x, p.y, cellRadius / 2 < .5 ? 1 : cellRadius / 2, MAROON );
 
 }
 
@@ -292,4 +288,12 @@ void Ant::setDrawDecisionCycle( bool drawDecisionCycle ) {
 
 void Ant::turn( int angle ) {
     this->angle = ( this->angle + angle ) % 360;
+}
+
+void Ant::setAngle( int angle ) {
+    this->angle = angle;
+}
+
+void Ant::addDecision( Decision decision ) {
+    decisionCycle.push_back( decision );
 }

@@ -51,6 +51,7 @@ GameWorld::GameWorld() :
     //generateAntDecisions( "RRLLLRLLLRRR", 0, 60, 1, 0.9, initialColor );
     //generateAntDecisions( "RRLLLRLLLLLLLLL", 195, 285, 0.7, 0.9, initialColor );
     //generateAntDecisions( "RRLLLRLLLLLLLLL", 285, 195, 0.7, 0.9, initialColor );
+    //generateAntDecisions( "RRLLLRLLLLLLLLL", 0, 360, 0.7, 0.9, initialColor );
 
     std::fill_n( board, boardSize, initialColor );
 
@@ -123,6 +124,7 @@ void GameWorld::inputAndUpdate() {
 
     if ( IsKeyPressed( KEY_R ) ) {
         std::fill_n( board, boardSize, initialColor );
+        ant.setGoingTo( Direction::LEFT );
         ant.setLine( 479 );
         ant.setColumn( 479 );
         ant.setMoving( false );
@@ -160,11 +162,11 @@ void GameWorld::inputAndUpdate() {
 void GameWorld::draw() const {
 
     BeginDrawing();
-    ClearBackground( WHITE );
+    ClearBackground( GetColor( initialColor ) );
 
     for ( int i = startLine; i < endLine; i++ ) {
         for ( int j = startColumn; j <= endColumn; j++ ) {
-            if ( board[i*columns + j] ) {
+            if ( board[i*columns + j] != initialColor ) {
                 DrawRectangle( 
                     j * cellWidth - startColumn * cellWidth, 
                     i * cellWidth - startLine * cellWidth, 
