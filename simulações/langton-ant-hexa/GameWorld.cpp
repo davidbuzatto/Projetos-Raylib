@@ -19,10 +19,10 @@
  * @brief Construct a new GameWorld object
  */
 GameWorld::GameWorld() : 
-        cellRadius( 4 ),
+        cellRadius( 16 ),
         boardWidth( 1300 ),
         state( GameState::IDLE ),
-        antMovesPerStep( 100 ),
+        antMovesPerStep( 1 ),
         initialColor( ColorToInt( DARKGRAY ) ),
         showInfo( true ) {
 
@@ -58,15 +58,15 @@ GameWorld::GameWorld() :
 
     /*generateAntDecisions( 
         std::vector<std::string>{ "L1", "L1", "R1", "R1" }, 
-        60, 150, 1, 0.9, initialColor );*/
-
-    /*generateAntDecisions( 
-        std::vector<std::string>{ "L1", "L2", "N", "U", "L2", "L1", "R2" }, 
-        180, 270, 1, 0.9, initialColor );*/
+        315, 240, 1, 0.7, initialColor );*/
 
     generateAntDecisions( 
+        std::vector<std::string>{ "L1", "L2", "N", "U", "L2", "L1", "R2" }, 
+        180, 270, 1, 0.9, initialColor );
+
+    /*generateAntDecisions( 
         std::vector<std::string>{ "R1", "R2", "N", "U", "R2", "R1", "L2" }, 
-        60, 150, 1, 0.8, initialColor );
+        60, 150, 1, 0.8, initialColor );*/
 
     std::fill_n( board, boardSize, initialColor );
 

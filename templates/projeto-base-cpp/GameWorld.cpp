@@ -54,6 +54,8 @@ void GameWorld::draw() const {
     DrawRectangle( x, y, m.x, m.y, BLACK );
     DrawText( text, x, y, 40, WHITE );
 
+    DrawFPS( 20, 20 );
+
     EndDrawing();
 
 }

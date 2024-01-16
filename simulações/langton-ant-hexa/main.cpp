@@ -1,7 +1,7 @@
 /**
  * @file main.cpp
  * @author Prof. Dr. David Buzatto
- * @brief Langton Ant in C++ using Raylib (https://www.raylib.com/).
+ * @brief Hexagonal Langton Ant in C++ using Raylib (https://www.raylib.com/).
  * 
  * @copyright Copyright (c) 2024
  */

@@ -57,6 +57,7 @@ void Ant::draw() const {
             Vector2 vd( 
                 GetScreenWidth() - margin - iMargin - dCellWidth - dCellWidth / 2, 
                 margin + iMargin + dCellWidth / 2 + dCellWidth * i + dCellSpacing * i );
+            Vector2 vc( vd.x + dCellWidth / 2, vd.y + dCellWidth / 2 );
 
             if ( i == 0 ) {
                 first = vd;
@@ -125,8 +126,10 @@ void Ant::draw() const {
                       vd.x + dCellWidth / 2 + xOffset + dx + ax2, 
                       vd.y + dCellWidth / 2 + dy + ay2, BLACK );
 
-            DrawRectangle( vd.x, vd.y, dCellWidth, dCellWidth, GetColor( d->getColor() ) );
-            DrawRectangleLines( vd.x, vd.y, dCellWidth, dCellWidth, BLACK );
+            DrawPoly( vc, 6, dCellWidth / 2 + 2, 0, GetColor( d->getColor() ) );
+            DrawPolyLines( vc, 6, dCellWidth / 2 + 2, 0, BLACK );
+            /*DrawRectangle( vd.x, vd.y, dCellWidth, dCellWidth, GetColor( d->getColor() ) );
+            DrawRectangleLines( vd.x, vd.y, dCellWidth, dCellWidth, BLACK );*/
 
             std::string label;
             switch ( d->getTurnType() ) {
