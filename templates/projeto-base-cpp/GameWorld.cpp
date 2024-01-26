@@ -15,6 +15,10 @@
 #include <ctime>
 #include <cassert>
 #include <raylib.h>
+//#include <raymath.h>
+//#define RAYGUI_IMPLEMENTATION
+//#include <raygui.h>
+//#undef RAYGUI_IMPLEMENTATION
 
 /**
  * @brief Construct a new GameWorld object
