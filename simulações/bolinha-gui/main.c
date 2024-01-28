@@ -352,6 +352,7 @@ void draw( GameWorld *gw ) {
     drawBallControlWindow( gw->ballControlWindow );
     drawBallPropertyWindow( gw->ballPropertyWindow );
     drawGameWorldControlWindow( gw->controlWindow );
+    //DrawFPS( GetScreenWidth() - 100, GetScreenHeight() - 40 );
 
     EndDrawing();
 
