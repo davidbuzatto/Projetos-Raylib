@@ -51,7 +51,7 @@
 
 
 /*---------------------------------------------
- * Custom types (enums, structs, unions etc.)
+ * Custom types (enums, structs, unions etc.).
  --------------------------------------------*/
 typedef struct GameWorld {
     int dummy;
