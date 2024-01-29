@@ -41,6 +41,7 @@ if ( $compile -or $cleanAndCompile -or $compileAndRun -or $all ) {
         -O1 `
         -Wall `
         -Wextra `
+        -Wno-unused-parameter `
         -pedantic-errors `
         -std=c++23 `
         -Wno-missing-braces `

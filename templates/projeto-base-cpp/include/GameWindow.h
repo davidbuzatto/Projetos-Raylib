@@ -27,6 +27,7 @@ class GameWindow {
     bool undecorated;
     bool alwaysOnTop;
     bool alwaysRun;
+    bool initAudio;
 
     GameWorld gw;
 
@@ -38,13 +39,14 @@ public:
      * @brief Construct a new GameWindow object.
      */
     GameWindow();
-    GameWindow( int width, int height, std::string title );
-    GameWindow( int width, int height, std::string title, int targetFPS );
-    GameWindow( int width, int height, std::string title, bool antialiasing );
-    GameWindow( int width, int height, std::string title, int targetFPS, bool antialiasing );
+    GameWindow( bool initAudio );
+    GameWindow( int width, int height, std::string title, bool initAudio );
+    GameWindow( int width, int height, std::string title, int targetFPS, bool initAudio );
+    GameWindow( int width, int height, std::string title, bool antialiasing, bool initAudio );
+    GameWindow( int width, int height, std::string title, int targetFPS, bool antialiasing, bool initAudio );
     GameWindow( int width, int height, std::string title, int targetFPS,
                 bool antialiasing, bool resizable, bool fullScreen,
-                bool undecorated, bool alwaysOnTop, bool alwaysRun );
+                bool undecorated, bool alwaysOnTop, bool alwaysRun, bool initAudio );
 
     /**
      * @brief Destroy the GameWindow object.
@@ -68,6 +70,7 @@ public:
     bool isUndecorated() const;
     bool isAlwaysOnTop() const;
     bool isAlwaysRun() const;
+    bool isInitAudio() const;
     bool isInitialized() const;
 
     // setters
@@ -81,5 +84,6 @@ public:
     void setUndecorated( bool undecorated );
     void setAlwaysOnTop( bool alwaysOnTop );
     void setAlwaysRun( bool alwaysRun );
+    void setInitAudio( bool initAudio );
     
 };

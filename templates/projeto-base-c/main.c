@@ -33,7 +33,17 @@
 /*---------------------------------------------
  * Macros. 
  --------------------------------------------*/
-
+#define WINDOW_WIDTH 800
+#define WINDOW_HEIGHT 450
+#define WINDOW_TITLE "Window Title"
+#define WINDOW_TARGET_FPS 60
+#define WINDOW_ANTIALIASING
+//#define WINDOW_RESIZABLE
+//#define WINDOW_FULL_SCREEN
+//#define WINDOW_UNDECORATED
+//#define WINDOW_ALWAYS_ON_TOP
+//#define WINDOW_ALWAYS_RUN
+//#define WINDOW_INIT_AUDIO
 
 /*--------------------------------------------
  * Constants. 
@@ -92,14 +102,35 @@ void unloadResources( void );
 
 int main( void ) {
 
-    const int screenWidth = 800;
-    const int screenHeight = 450;
+    #ifdef WINDOW_ANTIALIASING
+        SetConfigFlags( FLAG_MSAA_4X_HINT );
+    #endif
 
-    // turn antialiasing on (if possible)
-    SetConfigFlags( FLAG_MSAA_4X_HINT );
-    InitWindow( screenWidth, screenHeight, "Window Title" );
-    InitAudioDevice();
-    SetTargetFPS( 60 );    
+    #ifdef WINDOW_RESIZABLE
+        SetConfigFlags( FLAG_WINDOW_RESIZABLE );
+    #endif
+
+    #ifdef WINDOW_FULL_SCREEN
+        SetConfigFlags( FLAG_FULLSCREEN_MODE );
+    #endif
+
+    #ifdef WINDOW_UNDECORATED
+        SetConfigFlags( FLAG_WINDOW_UNDECORATED );
+    #endif
+
+    #ifdef WINDOW_ALWAYS_ON_TOP
+        SetConfigFlags( FLAG_WINDOW_TOPMOST );
+    #endif
+
+    #ifdef WINDOW_ALWAYS_RUN
+        SetConfigFlags( FLAG_WINDOW_ALWAYS_RUN );
+    #endif
+
+    InitWindow( WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE );
+    #ifdef WINDOW_INIT_AUDIO
+        InitAudioDevice();
+    #endif
+    SetTargetFPS( WINDOW_TARGET_FPS );    
 
     loadResources();
     createGameWorld();
@@ -110,7 +141,9 @@ int main( void ) {
     unloadResources();
     destroyGameWorld();
 
-    CloseAudioDevice();
+    #ifdef WINDOW_INIT_AUDIO
+        CloseAudioDevice();
+    #endif
     CloseWindow();
     return 0;
 

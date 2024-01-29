@@ -15,28 +15,32 @@
  * @brief Construct a new GameWindow object
  */
 GameWindow::GameWindow() : 
-    GameWindow( 800, 450, "Window Title", 60, true, false, false, false, false, false ) {
+    GameWindow( false ) {
 }
 
-GameWindow::GameWindow( int width, int height, std::string title ) : 
-    GameWindow( width, height, title, 60, true, false, false, false, false, false ) {
+GameWindow::GameWindow( bool initAudio ) : 
+    GameWindow( 800, 450, "Window Title", 60, true, false, false, false, false, false, initAudio ) {
 }
 
-GameWindow::GameWindow( int width, int height, std::string title, int targetFPS ) : 
-    GameWindow( width, height, title, targetFPS, true, false, false, false, false, false ) {
+GameWindow::GameWindow( int width, int height, std::string title, bool initAudio ) : 
+    GameWindow( width, height, title, 60, true, false, false, false, false, false, initAudio ) {
 }
 
-GameWindow::GameWindow( int width, int height, std::string title, bool antialiasing ) : 
-    GameWindow( width, height, title, 60, antialiasing, false, false, false, false, false ) {
+GameWindow::GameWindow( int width, int height, std::string title, int targetFPS, bool initAudio ) : 
+    GameWindow( width, height, title, targetFPS, true, false, false, false, false, false, initAudio ) {
 }
 
-GameWindow::GameWindow( int width, int height, std::string title, int targetFPS, bool antialiasing ) : 
-    GameWindow( width, height, title, targetFPS, antialiasing, false, false, false, false, false ) {
+GameWindow::GameWindow( int width, int height, std::string title, bool antialiasing, bool initAudio ) : 
+    GameWindow( width, height, title, 60, antialiasing, false, false, false, false, false, initAudio ) {
+}
+
+GameWindow::GameWindow( int width, int height, std::string title, int targetFPS, bool antialiasing, bool initAudio ) : 
+    GameWindow( width, height, title, targetFPS, antialiasing, false, false, false, false, false, initAudio ) {
 }
 
 GameWindow::GameWindow( int width, int height, std::string title, int targetFPS,
                         bool antialiasing, bool resizable, bool fullScreen,
-                        bool undecorated, bool alwaysOnTop, bool alwaysRun ) :
+                        bool undecorated, bool alwaysOnTop, bool alwaysRun, bool initAudio ) :
                         width( width ),
                         height( height ),
                         title( title ),
@@ -47,6 +51,7 @@ GameWindow::GameWindow( int width, int height, std::string title, int targetFPS,
                         undecorated( undecorated ),
                         alwaysOnTop( alwaysOnTop ),
                         alwaysRun( alwaysRun ),
+                        initAudio( initAudio ),
                         initialized( false ) {
 
     std::cout << "creating game window..." << std::endl;
@@ -95,7 +100,9 @@ void GameWindow::init() {
         }
 
         InitWindow( width, height, title.c_str() );
-        InitAudioDevice();
+        if ( initAudio ) {
+            InitAudioDevice();
+        }
         SetTargetFPS( targetFPS ); 
         initialized = true;
 
@@ -108,7 +115,9 @@ void GameWindow::init() {
 
         std::cout << "finishing GUI..." << std::endl;
 
-        CloseAudioDevice();
+        if ( initAudio ) {
+            CloseAudioDevice();
+        }
         CloseWindow();
 
     }
@@ -153,6 +162,10 @@ bool GameWindow::isAlwaysOnTop() const {
 
 bool GameWindow::isAlwaysRun() const {
     return alwaysRun;
+}
+
+bool GameWindow::isInitAudio() const {
+    return initAudio;
 }
 
 bool GameWindow::isInitialized() const {
@@ -216,5 +229,11 @@ void GameWindow::setAlwaysOnTop( bool alwaysOnTop ) {
 void GameWindow::setAlwaysRun( bool alwaysRun ) {
     if ( !initialized ) {
         this->alwaysRun = alwaysRun;
+    }
+}
+
+void GameWindow::setInitAudio( bool initAudio ) {
+    if ( !initialized ) {
+        this->initAudio = initAudio;
     }
 }

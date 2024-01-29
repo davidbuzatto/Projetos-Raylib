@@ -10,7 +10,7 @@
 
 int main( void ) {
 
-    GameWindow gameWindow( 800, 450, "Window Title" );
+    GameWindow gameWindow( 800, 450, "Window Title", false );
     gameWindow.init();
 
     return 0;
