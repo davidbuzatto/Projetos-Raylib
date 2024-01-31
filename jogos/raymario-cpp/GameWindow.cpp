@@ -100,13 +100,23 @@ void GameWindow::init() {
         }
 
         InitWindow( width, height, title.c_str() );
+        
         if ( initAudio ) {
             InitAudioDevice();
         }
-        SetTargetFPS( targetFPS ); 
+        SetTargetFPS( targetFPS );
+        
+        gw.loadResources();
+        
         initialized = true;
 
         std::cout << "starting game loop..." << std::endl;
+        
+        camera.target = Vector2( 0, 0 );
+        camera.offset = Vector2( GetScreenWidth()/2.0, GetScreenHeight() - 104 );
+        camera.rotation = 0.0f;
+        camera.zoom = 1.0f;
+        gw.setCamera( &camera );
 
         while ( !WindowShouldClose() ) {
             gw.inputAndUpdate();

@@ -13,84 +13,110 @@
 #include <raylib.h>
 
 Map::Map() {
+}
+
+Map::~Map() {
+    unloadResources();
+}
+
+void Map::draw() {
+
+    for ( size_t i = 0; i < tiles.size(); i++ ) {
+        tiles[i].draw();
+    }
+
+}
+
+std::vector<Tile> &Map::getTiles() {
+    return tiles;
+}
+
+
+void Map::loadResources() {
+
+    for ( char c = 'A'; c <= 'Z'; c++ ) {
+        tilesTexturesMap[c] = LoadTexture( TextFormat( "resources/images/tiles/tile_%c.png", c ) );
+    }
 
     float tileWidth = 32;
     int currentColumn = 0;
     int currentLine = 0;
 
-    std::string mapData = 
-R"(a                       a
-a                       a
-a                       a
-a                       a
-a                       a
-a                       a
-a                       a
-a                       a
-a                       a
-a                       a
-a                       a
-a                       a
-a                       a
-a                       a
-a                       a
-a           cc          a
-a           cc          a
-a          bbbb         a
-a         bbbbbb        a
-aaaaaaaaaaaaaaaaaaaaaaaaa)";
+    char *mapData = LoadFileText( "resources/maps/map1.txt" );
 
-    for ( size_t i = 0; i < mapData.length(); i++ ) {
-        switch ( mapData[i] ) {
+    while ( *mapData != '\0' ) {
+
+        switch ( *mapData ) {
             case 'a':
                 tiles.push_back( 
                     Tile( 
                         Vector2( currentColumn*tileWidth, currentLine*tileWidth ), 
                         Vector2( tileWidth, tileWidth ), 
-                        Color( 0, 200, 0, 255 )
+                        GREEN,
+                        nullptr
                     )
                 );
-                currentColumn++;
                 break;
             case 'b':
                 tiles.push_back( 
                     Tile( 
                         Vector2( currentColumn*tileWidth, currentLine*tileWidth ), 
                         Vector2( tileWidth, tileWidth ), 
-                        Color( 0, 0, 200, 255 )
+                        BLUE,
+                        nullptr
                     )
                 );
-                currentColumn++;
                 break;
             case 'c':
                 tiles.push_back( 
                     Tile( 
                         Vector2( currentColumn*tileWidth, currentLine*tileWidth ), 
                         Vector2( tileWidth, tileWidth ), 
-                        Color( 200, 0, 0, 255 )
+                        RED,
+                        nullptr
                     )
                 );
-                currentColumn++;
                 break;
-            case ' ':
-                currentColumn++;
+            case 'd':
+                tiles.push_back( 
+                    Tile( 
+                        Vector2( currentColumn*tileWidth, currentLine*tileWidth ), 
+                        Vector2( tileWidth, tileWidth ), 
+                        ORANGE,
+                        nullptr
+                    )
+                );
                 break;
             case '\n':
-                std::cout << "a" << std::endl;
                 currentLine++;
-                currentColumn = 0;
+                currentColumn = -1;
+                break;
+            case ' ':
+                break;
+            default:
+                int index = (*mapData)-'A';
+                if ( index >= 0 && index <= 26 ) {
+                    tiles.push_back( 
+                        Tile( 
+                            Vector2( currentColumn*tileWidth, currentLine*tileWidth ), 
+                            Vector2( tileWidth, tileWidth ), 
+                            BLACK,
+                            &tilesTexturesMap[*mapData]
+                        )
+                    );
+                }
                 break;
         }
-    }
-}
 
-Map::~Map() {
-}
-
-void Map::draw() const {
-
-    for ( size_t i = 0; i < tiles.size(); i++ ) {
-        tiles[i].draw();
+        currentColumn++;
+        mapData++;
+        
     }
 
+}
+
+void Map::unloadResources() {
+    for ( char c = 'A'; c <= 'Z'; c++ ) {
+        UnloadTexture( tilesTexturesMap[c] );
+    }
 }

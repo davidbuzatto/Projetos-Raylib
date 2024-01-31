@@ -30,6 +30,7 @@ class GameWindow {
     bool initAudio;
 
     GameWorld gw;
+    Camera2D camera;
 
     bool initialized;
 

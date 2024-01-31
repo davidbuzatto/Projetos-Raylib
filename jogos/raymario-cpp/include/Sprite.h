@@ -23,8 +23,8 @@ public:
     Sprite( Vector2 pos, Vector2 dim, Vector2 vel, Color color );
     ~Sprite();
     virtual void update() = 0;
-    virtual void draw() const = 0;
-    virtual bool checkCollision( Sprite &sprite ) const = 0;
+    virtual void draw() = 0;
+    virtual bool checkCollision( Sprite &sprite ) = 0;
 
     void setPos( Vector2 pos );
     void setPos( float x, float y );

@@ -17,6 +17,8 @@ class GameWorld : public virtual Drawable {
 
     Player player;
     Map map;
+    Camera2D *camera;
+    float gravity;
     
 public:
 
@@ -38,9 +40,7 @@ public:
     /**
      * @brief Draws the state of the game.
      */
-    virtual void draw() const;
-
-private:
+    virtual void draw();
 
     /**
      * @brief Load game resources like images, textures, sounds, fonts, shaders,
@@ -54,5 +54,7 @@ private:
      * Should be called inside the destructor.
      */
     void unloadResources();
+
+    void setCamera( Camera2D *camera );
     
 };

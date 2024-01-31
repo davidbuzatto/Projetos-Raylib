@@ -12,11 +12,13 @@
 
 class Tile : public virtual Sprite {
 
+    Texture2D *texture;
+
 public:
-    Tile( Vector2 pos, Vector2 dim, Color color );
+    Tile( Vector2 pos, Vector2 dim, Color color, Texture2D *texture );
     ~Tile();
     virtual void update();
-    virtual void draw() const;
-    virtual bool checkCollision( Sprite &sprite ) const;
+    virtual void draw();
+    virtual bool checkCollision( Sprite &sprite );
 
 };

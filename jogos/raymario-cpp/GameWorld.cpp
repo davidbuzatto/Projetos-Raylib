@@ -14,6 +14,7 @@
 #include <cstring>
 #include <ctime>
 #include <cassert>
+#include <vector>
 #include <raylib.h>
 //#include <raymath.h>
 //#define RAYGUI_IMPLEMENTATION
@@ -21,22 +22,24 @@
 //#undef RAYGUI_IMPLEMENTATION
 
 #include <Player.h>
+#include <Tile.h>
 
 /**
  * @brief Construct a new GameWorld object
  */
 GameWorld::GameWorld() :
     player( 
-        Vector2( 96, 576 ), 
+        Vector2( 96, 100 ), 
         Vector2( 0, 0 ), 
-        Vector2( 32, 32 ), 
+        Vector2( 28, 40 ), 
         Color( 0, 0, 0, 255 ),
-        160,
-        240,
-        -450,
+        260,
+        360,
+        -550,
         20
-    ) {
-    loadResources();
+    ),
+    camera( nullptr ),
+    gravity( 20 ) {
     std::cout << "creating game world..." << std::endl;
 }
 
@@ -55,12 +58,23 @@ void GameWorld::inputAndUpdate() {
 
     player.update();
 
+    // player x tiles collision resolution
+    std::vector<Tile> &tiles = map.getTiles();
+    for ( size_t i = 0; i < tiles.size(); i++ ) {
+        player.checkCollision( tiles[i] );
+    }
+
+    camera->offset.x = GetScreenWidth()/2.0;
+    camera->offset.y = GetScreenHeight() - (64 + player.getHeight()/2);
+    camera->target.x = player.getX() + player.getWidth()/2;
+    camera->target.y = player.getY() + player.getHeight()/2;
+
 }
 
 /**
  * @brief Draws the state of the game.
  */
-void GameWorld::draw() const {
+void GameWorld::draw() {
 
     BeginDrawing();
     ClearBackground( WHITE );
@@ -69,18 +83,21 @@ void GameWorld::draw() const {
     int columns = GetScreenWidth() / tileWidth;
     int lines = GetScreenHeight() / tileWidth;
 
+    BeginMode2D( *camera );
+
     map.draw();
     player.draw();
 
-    for ( int i = 0; i <= lines; i++ ) {
-        DrawLine( 0, i*tileWidth, GetScreenWidth(), i*tileWidth, GRAY );
+    for ( int i = -20; i <= lines + 20; i++ ) {
+        DrawLine( -2000, i*tileWidth, 10000, i*tileWidth, GRAY );
+    }
+    for ( int i = -20; i <= columns + 250; i++ ) {
+        DrawLine( i*tileWidth, -2000, i*tileWidth, 2000, GRAY );
     }
 
-    for ( int i = 0; i <= columns; i++ ) {
-        DrawLine( i*tileWidth, 0, i*tileWidth, GetScreenHeight(), GRAY );
-    }
+    EndMode2D();
 
-    DrawFPS( 40, 10 );
+    DrawFPS( 20, 20 );
 
     EndDrawing();
 
@@ -92,6 +109,8 @@ void GameWorld::draw() const {
  */
 void GameWorld::loadResources() {
     std::cout << "loading resources..." << std::endl;
+    player.loadResources();
+    map.loadResources();
 }
 
 /**
@@ -100,4 +119,8 @@ void GameWorld::loadResources() {
  */
 void GameWorld::unloadResources() {
     std::cout << "unloading resources..." << std::endl;
+}
+
+void GameWorld::setCamera( Camera2D *camera ) {
+    this->camera = camera;
 }
