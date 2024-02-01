@@ -17,6 +17,9 @@ class Map : public virtual Drawable {
 
     std::vector<Tile> tiles;
     std::map<char, Texture2D> tilesTexturesMap;
+    Texture2D backgroundTexture;
+    float maxWidth;
+    bool debug;
 
 public:
     Map();
@@ -25,5 +28,6 @@ public:
     std::vector<Tile> &getTiles();
     void loadResources();
     void unloadResources();
+    void setDebug( bool debug );
 
 };

@@ -38,9 +38,11 @@ GameWorld::GameWorld() :
         -550,
         20
     ),
-    camera( nullptr ),
-    gravity( 20 ) {
+    camera( nullptr ) {
     std::cout << "creating game world..." << std::endl;
+    debug = true;
+    map.setDebug( debug );
+    player.setDebug( debug );
 }
 
 /**
@@ -88,16 +90,20 @@ void GameWorld::draw() {
     map.draw();
     player.draw();
 
-    for ( int i = -20; i <= lines + 20; i++ ) {
-        DrawLine( -2000, i*tileWidth, 10000, i*tileWidth, GRAY );
-    }
-    for ( int i = -20; i <= columns + 250; i++ ) {
-        DrawLine( i*tileWidth, -2000, i*tileWidth, 2000, GRAY );
+    if ( debug ) {
+        for ( int i = -20; i <= lines + 20; i++ ) {
+            DrawLine( -2000, i*tileWidth, 10000, i*tileWidth, GRAY );
+        }
+        for ( int i = -20; i <= columns + 250; i++ ) {
+            DrawLine( i*tileWidth, -2000, i*tileWidth, 2000, GRAY );
+        }
     }
 
     EndMode2D();
 
-    DrawFPS( 20, 20 );
+    if ( debug ) {
+        DrawFPS( 20, 20 );
+    }
 
     EndDrawing();
 

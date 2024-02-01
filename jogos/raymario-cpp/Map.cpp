@@ -13,6 +13,8 @@
 #include <raylib.h>
 
 Map::Map() {
+    maxWidth = 0;
+    debug = false;
 }
 
 Map::~Map() {
@@ -20,6 +22,11 @@ Map::~Map() {
 }
 
 void Map::draw() {
+
+    int repeats = maxWidth / backgroundTexture.width;
+    for ( int i = 0; i <= repeats; i++ ) {
+        DrawTexture( backgroundTexture, i*backgroundTexture.width, 0, WHITE );
+    }
 
     for ( size_t i = 0; i < tiles.size(); i++ ) {
         tiles[i].draw();
@@ -34,23 +41,32 @@ std::vector<Tile> &Map::getTiles() {
 
 void Map::loadResources() {
 
+    int map = 2;
     for ( char c = 'A'; c <= 'Z'; c++ ) {
         tilesTexturesMap[c] = LoadTexture( TextFormat( "resources/images/tiles/tile_%c.png", c ) );
     }
 
+    backgroundTexture = LoadTexture( TextFormat( "resources/images/backgrounds/background%d.png", map ) );
+
+    char *mapData = LoadFileText( TextFormat( "resources/maps/map%d.txt", map ) );
     float tileWidth = 32;
     int currentColumn = 0;
     int currentLine = 0;
 
-    char *mapData = LoadFileText( "resources/maps/map1.txt" );
-
     while ( *mapData != '\0' ) {
+
+        float x = currentColumn*tileWidth;
+        float y = currentLine*tileWidth;
+
+        if ( maxWidth < x ) {
+            maxWidth = x;
+        }
 
         switch ( *mapData ) {
             case 'a':
                 tiles.push_back( 
                     Tile( 
-                        Vector2( currentColumn*tileWidth, currentLine*tileWidth ), 
+                        Vector2( x, y ), 
                         Vector2( tileWidth, tileWidth ), 
                         GREEN,
                         nullptr
@@ -60,7 +76,7 @@ void Map::loadResources() {
             case 'b':
                 tiles.push_back( 
                     Tile( 
-                        Vector2( currentColumn*tileWidth, currentLine*tileWidth ), 
+                        Vector2( x, y ), 
                         Vector2( tileWidth, tileWidth ), 
                         BLUE,
                         nullptr
@@ -70,7 +86,7 @@ void Map::loadResources() {
             case 'c':
                 tiles.push_back( 
                     Tile( 
-                        Vector2( currentColumn*tileWidth, currentLine*tileWidth ), 
+                        Vector2( x, y ), 
                         Vector2( tileWidth, tileWidth ), 
                         RED,
                         nullptr
@@ -80,7 +96,7 @@ void Map::loadResources() {
             case 'd':
                 tiles.push_back( 
                     Tile( 
-                        Vector2( currentColumn*tileWidth, currentLine*tileWidth ), 
+                        Vector2( x, y ), 
                         Vector2( tileWidth, tileWidth ), 
                         ORANGE,
                         nullptr
@@ -98,7 +114,7 @@ void Map::loadResources() {
                 if ( index >= 0 && index <= 26 ) {
                     tiles.push_back( 
                         Tile( 
-                            Vector2( currentColumn*tileWidth, currentLine*tileWidth ), 
+                            Vector2( x, y ), 
                             Vector2( tileWidth, tileWidth ), 
                             BLACK,
                             &tilesTexturesMap[*mapData]
@@ -119,4 +135,8 @@ void Map::unloadResources() {
     for ( char c = 'A'; c <= 'Z'; c++ ) {
         UnloadTexture( tilesTexturesMap[c] );
     }
+}
+
+void Map::setDebug( bool debug ) {
+    this->debug = debug;
 }

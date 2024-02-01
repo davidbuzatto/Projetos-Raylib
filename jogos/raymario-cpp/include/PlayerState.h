@@ -9,5 +9,6 @@
 
 enum PlayerState {
     ON_GROUND,
-    JUMPING
+    JUMPING,
+    CROUCHED
 };
