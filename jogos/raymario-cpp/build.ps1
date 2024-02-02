@@ -45,6 +45,8 @@ if ( $compile -or $cleanAndCompile -or $compileAndRun -or $all ) {
         -pedantic-errors `
         -std=c++23 `
         -Wno-missing-braces `
+        -Wno-missing-field-initializers `
+        -Wno-enum-compare `
         -I include/ `
         -L lib/ `
         -lraylib `

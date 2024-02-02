@@ -17,12 +17,15 @@
 #include <vector>
 #include <raylib.h>
 //#include <raymath.h>
-//#define RAYGUI_IMPLEMENTATION
-//#include <raygui.h>
-//#undef RAYGUI_IMPLEMENTATION
+#define RAYGUI_IMPLEMENTATION
+#include <raygui.h>
+#undef RAYGUI_IMPLEMENTATION
 
 #include <Player.h>
 #include <Tile.h>
+
+bool GameWorld::debug = true;
+float GameWorld::gravity = 20;
 
 /**
  * @brief Construct a new GameWorld object
@@ -35,14 +38,10 @@ GameWorld::GameWorld() :
         Color( 0, 0, 0, 255 ),
         260,
         360,
-        -550,
-        20
+        -550
     ),
     camera( nullptr ) {
     std::cout << "creating game world..." << std::endl;
-    debug = true;
-    map.setDebug( debug );
-    player.setDebug( debug );
 }
 
 /**
@@ -58,12 +57,36 @@ GameWorld::~GameWorld() {
  */
 void GameWorld::inputAndUpdate() {
 
+    std::vector<Goomba> &goombas = map.getGoombas();
+
     player.update();
+    for ( size_t i = 0; i < goombas.size(); i++ ) {
+        goombas[i].update();
+    }
 
     // player x tiles collision resolution
     std::vector<Tile> &tiles = map.getTiles();
     for ( size_t i = 0; i < tiles.size(); i++ ) {
         player.checkCollision( tiles[i] );
+    }
+
+    // goombas x tiles collision resolution
+    for ( size_t i = 0; i < tiles.size(); i++ ) {
+        for ( size_t j = 0; j < goombas.size(); j++ ) {
+            goombas[j].checkCollision( tiles[i] );
+        }
+    }
+
+    // player x coins collision resolution
+    std::vector<Coin> &coins = map.getCoins();
+    std::vector<int> collectCoins;
+    for ( size_t i = 0; i < coins.size(); i++ ) {
+        if ( coins[i].checkCollision( player ) ) {
+            collectCoins.push_back(i);
+        }
+    }
+    for ( int i = collectCoins.size() - 1; i >= 0; i-- ) {
+        coins.erase( coins.begin() + collectCoins[i] );
     }
 
     camera->offset.x = GetScreenWidth()/2.0;
@@ -102,7 +125,17 @@ void GameWorld::draw() {
     EndMode2D();
 
     if ( debug ) {
-        DrawFPS( 20, 20 );
+        DrawFPS( 30, 90 );
+    }
+
+    GuiPanel( Rectangle( 20, 20, 100, 60 ), "Controles" );
+    if ( GuiButton( Rectangle( 30, 50, 60, 20 ), "debug" ) == 1 ) {
+        debug = !debug;
+        if ( !debug ) {
+            for ( size_t i = 0; i < map.getTiles().size(); i++ ) {
+                map.getTiles()[i].setColor( BLACK );
+            }
+        }
     }
 
     EndDrawing();

@@ -18,10 +18,12 @@ class GameWorld : public virtual Drawable {
     Player player;
     Map map;
     Camera2D *camera;
-    bool debug;
     
 public:
 
+    static bool debug;
+    static float gravity;
+    
     /**
      * @brief Construct a new GameWorld object.
      */

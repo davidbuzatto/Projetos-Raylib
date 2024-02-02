@@ -6,6 +6,8 @@
  * @copyright Copyright (c) 2024
  */
 #include <GameWindow.h>
+#include <Coin.h>
+#include <vector>
 
 int main( void ) {
 

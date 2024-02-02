@@ -11,7 +11,10 @@
 #include <map>
 #include <raylib.h>
 #include <Drawable.h>
+#include <Coin.h>
 #include <Tile.h>
+#include <Sprite.h>
+#include <Goomba.h>
 
 class Map : public virtual Drawable {
 
@@ -19,15 +22,18 @@ class Map : public virtual Drawable {
     std::map<char, Texture2D> tilesTexturesMap;
     Texture2D backgroundTexture;
     float maxWidth;
-    bool debug;
+
+    std::vector<Coin> coins;
+    std::vector<Goomba> goombas;
 
 public:
     Map();
     ~Map();
     virtual void draw();
     std::vector<Tile> &getTiles();
+    std::vector<Coin> &getCoins();
+    std::vector<Goomba> &getGoombas();
     void loadResources();
     void unloadResources();
-    void setDebug( bool debug );
 
 };

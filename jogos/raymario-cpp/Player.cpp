@@ -8,17 +8,17 @@
 #include <Player.h>
 #include <PlayerState.h>
 #include <Direction.h>
+#include <GameWorld.h>
 #include <Tile.h>
 #include <typeinfo>
 #include <iostream>
 #include <raylib.h>
 
-Player::Player( Vector2 pos, Vector2 dim, Vector2 vel, Color color, float speedX, float maxSpeedX, float jumpSpeed, float gravity ) :
+Player::Player( Vector2 pos, Vector2 dim, Vector2 vel, Color color, float speedX, float maxSpeedX, float jumpSpeed ) :
     Sprite( pos, dim, vel, color ),
     speedX( speedX ),
     maxSpeedX( maxSpeedX),
-    jumpSpeed( jumpSpeed ),
-    gravity( gravity ) {
+    jumpSpeed( jumpSpeed ) {
 
     state = PlayerState::ON_GROUND;
     facingDirection = Direction::RIGHT;
@@ -34,8 +34,6 @@ Player::Player( Vector2 pos, Vector2 dim, Vector2 vel, Color color, float speedX
     cpS.setColor( VIOLET );
     cpE.setColor( YELLOW );
     cpW.setColor( LIME );
-
-    debug = false;
 
     updateCollisionProbes();
     
@@ -86,7 +84,7 @@ void Player::update() {
     pos.x = pos.x + vel.x * delta;
     pos.y = pos.y + vel.y * delta;
 
-    vel.y += gravity;
+    vel.y += GameWorld::gravity;
 
 }
 
@@ -130,7 +128,7 @@ void Player::draw() {
         }
     }
 
-    if ( debug ) {
+    if ( GameWorld::debug ) {
         cpN.draw();
         cpS.draw();
         cpE.draw();
@@ -153,7 +151,7 @@ bool Player::checkCollision( Sprite &sprite ) {
         Rectangle cpWRect( cpW.getX(), cpW.getY(), cpW.getWidth(), cpW.getHeight() );
 
         if ( CheckCollisionRecs( cpNRect, tileRect ) ) {
-            if ( debug ) {
+            if ( GameWorld::debug ) {
                 tile.setColor( cpN.getColor() );
             }
             pos.y = tile.getY() + tile.getHeight();
@@ -161,7 +159,7 @@ bool Player::checkCollision( Sprite &sprite ) {
             updateCollisionProbes();
             return true;
         } else if ( CheckCollisionRecs( cpSRect, tileRect ) ) {
-            if ( debug ) {
+            if ( GameWorld::debug ) {
                 tile.setColor( cpS.getColor() );
             }
             pos.y = tile.getY() - dim.y;
@@ -170,7 +168,7 @@ bool Player::checkCollision( Sprite &sprite ) {
             state = PlayerState::ON_GROUND;
             return true;
         } else if ( CheckCollisionRecs( cpERect, tileRect ) ) {
-            if ( debug ) {
+            if ( GameWorld::debug ) {
                 tile.setColor( cpE.getColor() );
             }
             pos.x = tile.getX() - dim.x;
@@ -178,7 +176,7 @@ bool Player::checkCollision( Sprite &sprite ) {
             updateCollisionProbes();
             return true;
         } else if ( CheckCollisionRecs( cpWRect, tileRect ) ) {
-            if ( debug ) {
+            if ( GameWorld::debug ) {
                 tile.setColor( cpW.getColor() );
             }
             pos.x = tile.getX() + tile.getWidth();
@@ -258,8 +256,4 @@ void Player::unloadResources() {
     UnloadTexture( textureDL );
     UnloadTexture( texture1Dy );
     UnloadTexture( texture2Dy );
-}
-
-void Player::setDebug( bool debug ) {
-    this->debug = debug;
 }

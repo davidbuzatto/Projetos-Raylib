@@ -11,10 +11,12 @@
 #include <string>
 #include <iostream>
 #include <raylib.h>
+#include <Coin.h>
+#include <Goomba.h>
+#include <Sprite.h>
 
-Map::Map() {
-    maxWidth = 0;
-    debug = false;
+Map::Map() :
+    maxWidth( 0 ) {
 }
 
 Map::~Map() {
@@ -32,16 +34,31 @@ void Map::draw() {
         tiles[i].draw();
     }
 
+    for ( size_t i = 0; i < coins.size(); i++ ) {
+        coins[i].draw();
+    }
+
+    for ( size_t i = 0; i < goombas.size(); i++ ) {
+        goombas[i].draw();
+    }
+
 }
 
 std::vector<Tile> &Map::getTiles() {
     return tiles;
 }
 
+std::vector<Coin> &Map::getCoins() {
+    return coins;
+}
+
+std::vector<Goomba> &Map::getGoombas() {
+    return goombas;
+}
 
 void Map::loadResources() {
 
-    int map = 2;
+    int map = 1;
     for ( char c = 'A'; c <= 'Z'; c++ ) {
         tilesTexturesMap[c] = LoadTexture( TextFormat( "resources/images/tiles/tile_%c.png", c ) );
     }
@@ -103,6 +120,12 @@ void Map::loadResources() {
                     )
                 );
                 break;
+            case 'o':
+                coins.push_back( Coin( Vector2( x, y ), Vector2( 25, 32 ), YELLOW ) );
+                break;
+            case '1':
+                goombas.push_back( Goomba( Vector2( x, y+2 ), Vector2( -100, 0 ), Vector2( 32, 30 ), YELLOW ) );
+                break;
             case '\n':
                 currentLine++;
                 currentColumn = -1;
@@ -129,14 +152,15 @@ void Map::loadResources() {
         
     }
 
+    Coin::loadResources();
+    Goomba::loadResources();
+
 }
 
 void Map::unloadResources() {
     for ( char c = 'A'; c <= 'Z'; c++ ) {
         UnloadTexture( tilesTexturesMap[c] );
     }
-}
-
-void Map::setDebug( bool debug ) {
-    this->debug = debug;
+    Coin::unloadResources();
+    Goomba::unloadResources();
 }

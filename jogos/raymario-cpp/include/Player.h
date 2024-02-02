@@ -18,7 +18,6 @@ class Player : public virtual Sprite {
     float speedX;
     float maxSpeedX;
     float jumpSpeed;
-    float gravity;
 
     PlayerState state;
     Direction facingDirection;
@@ -47,11 +46,9 @@ class Player : public virtual Sprite {
     CollisionProbe cpS;
     CollisionProbe cpE;
     CollisionProbe cpW;
-
-    bool debug;
     
 public:
-    Player( Vector2 pos, Vector2 dim, Vector2 vel, Color color, float speedX, float maxSpeedX, float jumpSpeed, float gravity );
+    Player( Vector2 pos, Vector2 dim, Vector2 vel, Color color, float speedX, float maxSpeedX, float jumpSpeed );
     ~Player();
     virtual void update();
     virtual void draw();
@@ -66,7 +63,5 @@ public:
 
     void loadResources();
     void unloadResources();
-
-    void setDebug( bool debug );
 
 };
