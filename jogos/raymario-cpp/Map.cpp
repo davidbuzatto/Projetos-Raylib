@@ -15,8 +15,12 @@
 #include <Goomba.h>
 #include <Sprite.h>
 
+int Map::tileWidth = 32;
+
 Map::Map() :
-    maxWidth( 0 ) {
+    maxWidth( 0 ),
+    maxHeight( 0 ),
+    playerOffset( 0 ) {
 }
 
 Map::~Map() {
@@ -25,9 +29,13 @@ Map::~Map() {
 
 void Map::draw() {
 
-    int repeats = maxWidth / backgroundTexture.width;
+    int repeats = maxWidth / backgroundTexture.width + 2;
     for ( int i = 0; i <= repeats; i++ ) {
-        DrawTexture( backgroundTexture, i*backgroundTexture.width, 0, WHITE );
+        DrawTexture( 
+            backgroundTexture, 
+            -backgroundTexture.width + i*backgroundTexture.width - playerOffset * 0.06, 
+            0, 
+            WHITE );
     }
 
     for ( size_t i = 0; i < tiles.size(); i++ ) {
@@ -59,14 +67,21 @@ std::vector<Goomba> &Map::getGoombas() {
 void Map::loadResources() {
 
     int map = 1;
+    #define TESTE
+
     for ( char c = 'A'; c <= 'Z'; c++ ) {
         tilesTexturesMap[c] = LoadTexture( TextFormat( "resources/images/tiles/tile_%c.png", c ) );
     }
 
     backgroundTexture = LoadTexture( TextFormat( "resources/images/backgrounds/background%d.png", map ) );
 
-    char *mapData = LoadFileText( TextFormat( "resources/maps/map%d.txt", map ) );
-    float tileWidth = 32;
+    // meus Deus, que coisa horrível kkkk
+    #ifdef TESTE
+        char *mapData = LoadFileText( TextFormat( "resources/maps/map1Testes.txt", map ) );
+    #else
+        char *mapData = LoadFileText( TextFormat( "resources/maps/map%d.txt", map ) );
+    #endif
+    
     int currentColumn = 0;
     int currentLine = 0;
 
@@ -77,6 +92,10 @@ void Map::loadResources() {
 
         if ( maxWidth < x ) {
             maxWidth = x;
+        }
+
+        if ( maxHeight < y ) {
+            maxHeight = y;
         }
 
         switch ( *mapData ) {
@@ -152,6 +171,8 @@ void Map::loadResources() {
         
     }
 
+    maxHeight += tileWidth;
+
     Coin::loadResources();
     Goomba::loadResources();
 
@@ -163,4 +184,16 @@ void Map::unloadResources() {
     }
     Coin::unloadResources();
     Goomba::unloadResources();
+}
+
+float Map::getMaxWidth() {
+    return maxWidth;
+}
+
+float Map::getMaxHeight() {
+    return maxHeight;
+}
+
+void Map::setPlayerOffset( float playerOffset ) {
+    this->playerOffset = playerOffset;
 }

@@ -89,10 +89,34 @@ void GameWorld::inputAndUpdate() {
         coins.erase( coins.begin() + collectCoins[i] );
     }
 
-    camera->offset.x = GetScreenWidth()/2.0;
-    camera->offset.y = GetScreenHeight() - (64 + player.getHeight()/2);
-    camera->target.x = player.getX() + player.getWidth()/2;
-    camera->target.y = player.getY() + player.getHeight()/2;
+    float xc = GetScreenWidth() / 2.0;
+    float yc = GetScreenHeight() / 2.0;
+    float pxc = player.getX() + player.getWidth() / 2.0;
+    float pyc = player.getY() + player.getHeight() / 2.0;
+    
+    camera->offset.x = xc;
+
+    if ( pxc < xc ) {
+        camera->target.x = xc;
+        map.setPlayerOffset( 0 );         // x parallax
+    } else if ( pxc >= map.getMaxWidth() - xc ) {
+        camera->target.x = map.getMaxWidth() - GetScreenWidth();
+        camera->offset.x = 0;
+    } else {
+        camera->target.x = pxc;
+        map.setPlayerOffset( pxc - xc );  // x parallax
+    }
+
+    camera->offset.y = yc;
+
+    if ( pyc < yc ) {
+        camera->target.y = yc;
+    } else if ( pyc >= map.getMaxHeight() - yc ) {
+        camera->target.y = map.getMaxHeight() - GetScreenHeight();
+        camera->offset.y = 0;
+    } else {
+        camera->target.y = pyc;
+    }
 
 }
 
@@ -104,9 +128,8 @@ void GameWorld::draw() {
     BeginDrawing();
     ClearBackground( WHITE );
 
-    int tileWidth = 32;
-    int columns = GetScreenWidth() / tileWidth;
-    int lines = GetScreenHeight() / tileWidth;
+    int columns = GetScreenWidth() / Map::tileWidth;
+    int lines = GetScreenHeight() / Map::tileWidth;
 
     BeginMode2D( *camera );
 
@@ -115,10 +138,10 @@ void GameWorld::draw() {
 
     if ( debug ) {
         for ( int i = -20; i <= lines + 20; i++ ) {
-            DrawLine( -2000, i*tileWidth, 10000, i*tileWidth, GRAY );
+            DrawLine( -2000, i*Map::tileWidth, 10000, i*Map::tileWidth, GRAY );
         }
         for ( int i = -20; i <= columns + 250; i++ ) {
-            DrawLine( i*tileWidth, -2000, i*tileWidth, 2000, GRAY );
+            DrawLine( i*Map::tileWidth, -2000, i*Map::tileWidth, 2000, GRAY );
         }
     }
 
@@ -137,7 +160,7 @@ void GameWorld::draw() {
             }
         }
     }
-
+    
     EndDrawing();
 
 }

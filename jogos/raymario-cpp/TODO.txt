@@ -1,0 +1,12 @@
+limitar o personagem com blocos visíveis ou invisíveis (extremos da fase)
+inimigos colidem entre si?
+ativar inimigos apenas quando a câmera deslizar próximo (evitar ativação prematura)
+permitir comentários nos arquivos de mapa?
+colisão jogador x inimigos
+colocar som
+refatorar
+polimorfismo
+terminar inimigos
+criar caixas interativas (moedas, "?" etc)
+criar GUI
+criar transição entre fases

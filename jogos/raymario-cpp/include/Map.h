@@ -22,11 +22,14 @@ class Map : public virtual Drawable {
     std::map<char, Texture2D> tilesTexturesMap;
     Texture2D backgroundTexture;
     float maxWidth;
+    float maxHeight;
+    float playerOffset;
 
     std::vector<Coin> coins;
     std::vector<Goomba> goombas;
 
 public:
+
     Map();
     ~Map();
     virtual void draw();
@@ -35,5 +38,10 @@ public:
     std::vector<Goomba> &getGoombas();
     void loadResources();
     void unloadResources();
+    float getMaxWidth();
+    float getMaxHeight();
+    void setPlayerOffset( float playerOffset );
+
+    static int tileWidth;
 
 };
