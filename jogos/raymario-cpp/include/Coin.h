@@ -19,7 +19,6 @@ class Coin : public virtual Sprite {
     int maxFrames;
     
 public:
-    static std::vector<Texture2D> textures;
     Coin( Vector2 pos, Vector2 dim, Color color );
     ~Coin();
     virtual void update();

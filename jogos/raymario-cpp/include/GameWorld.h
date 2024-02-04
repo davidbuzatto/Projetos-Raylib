@@ -49,13 +49,13 @@ public:
      * etc.
      * Should be called inside the constructor.
      */
-    void loadResources();
+    static void loadResources();
 
     /**
      * @brief Unload the once loaded game resources.
      * Should be called inside the destructor.
      */
-    void unloadResources();
+    static void unloadResources();
 
     void setCamera( Camera2D *camera );
     

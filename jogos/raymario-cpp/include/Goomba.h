@@ -27,15 +27,11 @@ class Goomba : public virtual Sprite {
     CollisionProbe cpW;
     
 public:
-    static std::vector<Texture2D> texturesR;
-    static std::vector<Texture2D> texturesL;
     Goomba( Vector2 pos, Vector2 dim, Vector2 vel, Color color );
     ~Goomba();
     virtual void update();
     virtual void draw();
     virtual bool checkCollision( Sprite &sprite );
     void updateCollisionProbes();
-    static void loadResources();
-    static void unloadResources();
 
 };

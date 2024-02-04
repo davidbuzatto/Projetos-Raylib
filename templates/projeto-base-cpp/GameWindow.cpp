@@ -103,7 +103,8 @@ void GameWindow::init() {
         if ( initAudio ) {
             InitAudioDevice();
         }
-        SetTargetFPS( targetFPS ); 
+        SetTargetFPS( targetFPS );
+        GameWorld::loadResources();
         initialized = true;
 
         std::cout << "starting game loop..." << std::endl;
@@ -115,6 +116,7 @@ void GameWindow::init() {
 
         std::cout << "finishing GUI..." << std::endl;
 
+        GameWorld::unloadResources();
         if ( initAudio ) {
             CloseAudioDevice();
         }

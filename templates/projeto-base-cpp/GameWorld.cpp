@@ -6,6 +6,7 @@
  * @copyright Copyright (c) 2024
  */
 #include <GameWorld.h>
+#include <ResourceManager.h>
 
 #include <iostream>
 #include <fmt/format.h>
@@ -24,7 +25,6 @@
  * @brief Construct a new GameWorld object
  */
 GameWorld::GameWorld() {
-    loadResources();
     std::cout << "creating game world..." << std::endl;
 }
 
@@ -32,7 +32,6 @@ GameWorld::GameWorld() {
  * @brief Destroy the GameWorld object
  */
 GameWorld::~GameWorld() {
-    unloadResources();
     std::cout << "destroying game world..." << std::endl;
 }
 
@@ -70,6 +69,9 @@ void GameWorld::draw() const {
  */
 void GameWorld::loadResources() {
     std::cout << "loading resources..." << std::endl;
+    ResourceManager::loadTextures();
+    ResourceManager::loadSounds();
+    ResourceManager::loadMusics();
 }
 
 /**
@@ -78,4 +80,7 @@ void GameWorld::loadResources() {
  */
 void GameWorld::unloadResources() {
     std::cout << "unloading resources..." << std::endl;
+    ResourceManager::unloadTextures();
+    ResourceManager::unloadSounds();
+    ResourceManager::unloadMusics();
 }

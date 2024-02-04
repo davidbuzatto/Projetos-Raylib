@@ -6,12 +6,13 @@
  * @copyright Copyright (c) 2024
  */
 #include <Coin.h>
+#include <ResourceManager.h>
 #include <Player.h>
 #include <vector>
+#include <map>
+#include <string>
 #include <iostream>
 #include <raylib.h>
-
-std::vector<Texture2D> Coin::textures;
 
 Coin::Coin( Vector2 pos, Vector2 dim, Color color ) :
     Sprite( pos, dim, color ) {
@@ -31,7 +32,7 @@ void Coin::update() {
     if ( frameAcum >= frameTime ) {
         frameAcum = 0;
         currentFrame++;
-        currentFrame %= textures.size();
+        currentFrame %= 5;
     }
 
 }
@@ -39,7 +40,8 @@ void Coin::update() {
 void Coin::draw() {
 
     update();
-    DrawTexture( Coin::textures[currentFrame], pos.x, pos.y, WHITE );
+    std::map<std::string, Texture2D> &textures = ResourceManager::getTextures();
+    DrawTexture( textures[std::string( TextFormat( "coin%d", currentFrame+1 ))], pos.x, pos.y, WHITE );
 
 }
 
@@ -57,18 +59,4 @@ bool Coin::checkCollision( Sprite &sprite ) {
 
     return false;
 
-}
-
-void Coin::loadResources() {
-    textures.push_back( LoadTexture( "resources/images/sprites/coin1.png" ) );
-    textures.push_back( LoadTexture( "resources/images/sprites/coin2.png" ) );
-    textures.push_back( LoadTexture( "resources/images/sprites/coin3.png" ) );
-    textures.push_back( LoadTexture( "resources/images/sprites/coin4.png" ) );
-    textures.push_back( LoadTexture( "resources/images/sprites/coin5.png" ) );
-}
-
-void Coin::unloadResources() {
-    for ( size_t i = 0; i < textures.size(); i++ ) {
-        UnloadTexture( textures[i] );
-    }
 }

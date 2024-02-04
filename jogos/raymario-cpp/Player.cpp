@@ -6,6 +6,7 @@
  * @copyright Copyright (c) 2024
  */
 #include <Player.h>
+#include <ResourceManager.h>
 #include <PlayerState.h>
 #include <Direction.h>
 #include <GameWorld.h>
@@ -40,14 +41,15 @@ Player::Player( Vector2 pos, Vector2 dim, Vector2 vel, Color color, float speedX
 }
 
 Player::~Player() {
-    unloadResources();
 }
 
 void Player::update() {
     
+    std::map<std::string, Sound> &sounds = ResourceManager::getSounds();
     float delta = GetFrameTime();
-    float currentSpeedX = IsKeyDown( KEY_LEFT_CONTROL ) ? maxSpeedX : speedX;
-    float currentFrameTime = IsKeyDown( KEY_LEFT_CONTROL ) ? frameTimeRunning : frameTimeWalking;
+    bool running = IsKeyDown( KEY_LEFT_CONTROL ) || IsGamepadButtonDown( 0, GAMEPAD_BUTTON_RIGHT_FACE_LEFT );
+    float currentSpeedX = running ? maxSpeedX : speedX;
+    float currentFrameTime = running ? frameTimeRunning : frameTimeWalking;
 
     if ( vel.x != 0 ) {
         frameAcum += delta;
@@ -60,25 +62,33 @@ void Player::update() {
         currentFrame = 0;
     }
 
-    if ( IsKeyDown( KEY_RIGHT ) ) {
+    if ( IsKeyDown( KEY_RIGHT ) || 
+         IsGamepadButtonDown( 0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT ) ||
+         GetGamepadAxisMovement( 0, GAMEPAD_AXIS_LEFT_X ) > 0 ) {
         facingDirection = Direction::RIGHT;
         vel.x = currentSpeedX;
-    } else if ( IsKeyDown( KEY_LEFT ) ) {
+    } else if ( IsKeyDown( KEY_LEFT ) || 
+                IsGamepadButtonDown( 0, GAMEPAD_BUTTON_LEFT_FACE_LEFT ) ||
+                GetGamepadAxisMovement( 0, GAMEPAD_AXIS_LEFT_X ) < 0 ) {
         facingDirection = Direction::LEFT;
         vel.x = -currentSpeedX;
     } else {
         vel.x = 0;
     }
 
-    if ( IsKeyDown( KEY_DOWN ) ) {
+    /*if ( IsKeyDown( KEY_DOWN ) || 
+         IsGamepadButtonDown( 0, GAMEPAD_BUTTON_LEFT_FACE_DOWN ) ||
+         GetGamepadAxisMovement( 0, GAMEPAD_AXIS_LEFT_Y ) > 0 ) {
         crouched = true;
     } else {
         crouched = false;
-    }
+    }*/
 
-    if ( IsKeyPressed( KEY_SPACE ) && state != PlayerState::JUMPING ) {
+    if ( ( IsKeyPressed( KEY_SPACE ) || 
+           IsGamepadButtonDown( 0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN ) ) && state != PlayerState::JUMPING ) {
         vel.y = jumpSpeed;
         state = PlayerState::JUMPING;
+        PlaySound( sounds["jump"] );
     }
 
     pos.x = pos.x + vel.x * delta;
@@ -90,40 +100,42 @@ void Player::update() {
 
 void Player::draw() {
 
+    std::map<std::string, Texture2D> &textures = ResourceManager::getTextures();
+    
     if ( facingDirection == Direction::RIGHT ) {
         if ( state == PlayerState::ON_GROUND ) {
             if ( crouched ) {
-                DrawTexture( textureDR, pos.x, pos.y, WHITE );
+                DrawTexture( textures["marioDR"], pos.x, pos.y, WHITE );
             } else {
                 if ( currentFrame == 0 ) {
-                    DrawTexture( texture1R, pos.x, pos.y, WHITE );
+                    DrawTexture( textures["mario1R"], pos.x, pos.y, WHITE );
                 } else if ( currentFrame == 1 ) {
-                    DrawTexture( texture2R, pos.x, pos.y, WHITE );
+                    DrawTexture( textures["mario2R"], pos.x, pos.y, WHITE );
                 }
             }
         } else if ( state == PlayerState::JUMPING ) {
             if ( vel.y < 0 ) {
-                DrawTexture( texture1JR, pos.x, pos.y, WHITE );
+                DrawTexture( textures["mario1JR"], pos.x, pos.y, WHITE );
             } else {
-                DrawTexture( texture2JR, pos.x, pos.y, WHITE );
+                DrawTexture( textures["mario2JR"], pos.x, pos.y, WHITE );
             }
         } 
     } else {
         if ( state == PlayerState::ON_GROUND ) {
             if ( crouched ) {
-                DrawTexture( textureDL, pos.x, pos.y, WHITE );
+                DrawTexture( textures["marioDL"], pos.x, pos.y, WHITE );
             } else {
                 if ( currentFrame == 0 ) {
-                    DrawTexture( texture1L, pos.x, pos.y, WHITE );
+                    DrawTexture( textures["mario1L"], pos.x, pos.y, WHITE );
                 } else if ( currentFrame == 1 ) {
-                    DrawTexture( texture2L, pos.x, pos.y, WHITE );
+                    DrawTexture( textures["mario2L"], pos.x, pos.y, WHITE );
                 }
             }
         } else if ( state == PlayerState::JUMPING ) {
             if ( vel.y < 0 ) {
-                DrawTexture( texture1JL, pos.x, pos.y, WHITE );
+                DrawTexture( textures["mario1JL"], pos.x, pos.y, WHITE );
             } else {
-                DrawTexture( texture2JL, pos.x, pos.y, WHITE );
+                DrawTexture( textures["mario2JL"], pos.x, pos.y, WHITE );
             }
         }
     }
@@ -226,34 +238,4 @@ float Player::getMaxSpeedX() {
 
 float Player::getJumpSpeed() {
     return jumpSpeed;
-}
-
-void Player::loadResources() {
-    texture1R  = LoadTexture( "resources/images/sprites/mario1R.png" );
-    texture2R  = LoadTexture( "resources/images/sprites/mario2R.png" );
-    texture1L  = LoadTexture( "resources/images/sprites/mario1L.png" );
-    texture2L  = LoadTexture( "resources/images/sprites/mario2L.png" );
-    texture1JR = LoadTexture( "resources/images/sprites/marioJump1R.png" );
-    texture2JR = LoadTexture( "resources/images/sprites/marioJump2R.png" );
-    texture1JL = LoadTexture( "resources/images/sprites/marioJump1L.png" );
-    texture2JL = LoadTexture( "resources/images/sprites/marioJump2L.png" );
-    textureDR  = LoadTexture( "resources/images/sprites/marioDown1R.png" );
-    textureDL  = LoadTexture( "resources/images/sprites/marioDown1L.png" );
-    texture1Dy  = LoadTexture( "resources/images/sprites/marioDying1.png" );
-    texture2Dy  = LoadTexture( "resources/images/sprites/marioDying2.png" );
-}
-
-void Player::unloadResources() {
-    UnloadTexture( texture1R );
-    UnloadTexture( texture2R );
-    UnloadTexture( texture1L );
-    UnloadTexture( texture2L );
-    UnloadTexture( texture1JR );
-    UnloadTexture( texture2JR );
-    UnloadTexture( texture1JL );
-    UnloadTexture( texture2JL );
-    UnloadTexture( textureDR );
-    UnloadTexture( textureDL );
-    UnloadTexture( texture1Dy );
-    UnloadTexture( texture2Dy );
 }

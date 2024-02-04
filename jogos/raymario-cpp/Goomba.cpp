@@ -6,16 +6,15 @@
  * @copyright Copyright (c) 2024
  */
 #include <Goomba.h>
+#include <ResourceManager.h>
 #include <GameWorld.h>
 #include <Direction.h>
 #include <CollisionProbe.h>
 #include <Player.h>
 #include <vector>
+#include <map>
 #include <iostream>
 #include <raylib.h>
-
-std::vector<Texture2D> Goomba::texturesR;
-std::vector<Texture2D> Goomba::texturesL;
 
 Goomba::Goomba( Vector2 pos, Vector2 dim, Vector2 vel, Color color ) :
     Sprite( pos, dim, vel, color ) {
@@ -49,7 +48,7 @@ void Goomba::update() {
     if ( frameAcum >= frameTime ) {
         frameAcum = 0;
         currentFrame++;
-        currentFrame %= texturesL.size();
+        currentFrame %= 2;
     }
 
     if ( vel.x >= 0 ) {
@@ -68,10 +67,12 @@ void Goomba::update() {
 
 void Goomba::draw() {
 
+    std::map<std::string, Texture2D> &textures = ResourceManager::getTextures();
+
     if ( facingDirection == Direction::RIGHT ) {
-        DrawTexture( Goomba::texturesR[currentFrame], pos.x, pos.y, WHITE );
+        DrawTexture( textures[std::string( TextFormat( "goomba%dR", currentFrame+1 ))], pos.x, pos.y, WHITE );
     } else {
-        DrawTexture( Goomba::texturesL[currentFrame], pos.x, pos.y, WHITE );
+        DrawTexture( textures[std::string( TextFormat( "goomba%dL", currentFrame+1 ))], pos.x, pos.y, WHITE );
     }
 
     if ( GameWorld::debug ) {
@@ -151,24 +152,4 @@ void Goomba::updateCollisionProbes() {
     cpW.setX( pos.x );
     cpW.setY( pos.y + dim.y / 2 - cpW.getHeight() / 2 );
 
-}
-
-void Goomba::loadResources() {
-
-    texturesL.push_back( LoadTexture( "resources/images/sprites/goomba1.png" ) );
-    texturesL.push_back( LoadTexture( "resources/images/sprites/goomba2.png" ) );
-
-    for ( size_t i = 0; i < texturesL.size(); i++ ) {
-        Image img = LoadImageFromTexture( texturesL[i] ); 
-        ImageFlipHorizontal( &img );
-        texturesR.push_back( LoadTextureFromImage( img ) );
-    }
-
-}
-
-void Goomba::unloadResources() {
-    for ( size_t i = 0; i < texturesL.size(); i++ ) {
-        UnloadTexture( texturesR[i] );
-        UnloadTexture( texturesL[i] );
-    }
 }

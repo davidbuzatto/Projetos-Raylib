@@ -6,6 +6,7 @@
  * @copyright Copyright (c) 2024
  */
 #include <GameWorld.h>
+#include <ResourceManager.h>
 
 #include <iostream>
 #include <fmt/format.h>
@@ -48,7 +49,6 @@ GameWorld::GameWorld() :
  * @brief Destroy the GameWorld object
  */
 GameWorld::~GameWorld() {
-    unloadResources();
     std::cout << "destroying game world..." << std::endl;
 }
 
@@ -57,7 +57,11 @@ GameWorld::~GameWorld() {
  */
 void GameWorld::inputAndUpdate() {
 
+    map.parseMap( 1, false );
+    map.playMusic();
+
     std::vector<Goomba> &goombas = map.getGoombas();
+    std::map<std::string, Sound> &sounds = ResourceManager::getSounds();
 
     player.update();
     for ( size_t i = 0; i < goombas.size(); i++ ) {
@@ -83,10 +87,20 @@ void GameWorld::inputAndUpdate() {
     for ( size_t i = 0; i < coins.size(); i++ ) {
         if ( coins[i].checkCollision( player ) ) {
             collectCoins.push_back(i);
+            PlaySound( sounds[ "coin" ] );
         }
     }
     for ( int i = collectCoins.size() - 1; i >= 0; i-- ) {
         coins.erase( coins.begin() + collectCoins[i] );
+    }
+
+    if ( IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_TRIGGER_1 ) ) {
+        debug = !debug;
+        if ( !debug ) {
+            for ( size_t i = 0; i < map.getTiles().size(); i++ ) {
+                map.getTiles()[i].setColor( BLACK );
+            }
+        }
     }
 
     float xc = GetScreenWidth() / 2.0;
@@ -171,8 +185,9 @@ void GameWorld::draw() {
  */
 void GameWorld::loadResources() {
     std::cout << "loading resources..." << std::endl;
-    player.loadResources();
-    map.loadResources();
+    ResourceManager::loadTextures();
+    ResourceManager::loadSounds();
+    ResourceManager::loadMusics();
 }
 
 /**
@@ -181,6 +196,9 @@ void GameWorld::loadResources() {
  */
 void GameWorld::unloadResources() {
     std::cout << "unloading resources..." << std::endl;
+    ResourceManager::unloadTextures();
+    ResourceManager::unloadSounds();
+    ResourceManager::unloadMusics();
 }
 
 void GameWorld::setCamera( Camera2D *camera ) {

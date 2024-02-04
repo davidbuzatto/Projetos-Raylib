@@ -106,7 +106,7 @@ void GameWindow::init() {
         }
         SetTargetFPS( targetFPS );
         
-        gw.loadResources();
+        GameWorld::loadResources();
         
         initialized = true;
 
@@ -125,6 +125,7 @@ void GameWindow::init() {
 
         std::cout << "finishing GUI..." << std::endl;
 
+        GameWorld::unloadResources();
         if ( initAudio ) {
             CloseAudioDevice();
         }

@@ -6,6 +6,7 @@
  * @copyright Copyright (c) 2024
  */
 #include <Map.h>
+#include <ResourceManager.h>
 
 #include <vector>
 #include <string>
@@ -20,11 +21,11 @@ int Map::tileWidth = 32;
 Map::Map() :
     maxWidth( 0 ),
     maxHeight( 0 ),
-    playerOffset( 0 ) {
+    playerOffset( 0 ),
+    parsed( false ) {
 }
 
 Map::~Map() {
-    unloadResources();
 }
 
 void Map::draw() {
@@ -33,7 +34,7 @@ void Map::draw() {
     for ( int i = 0; i <= repeats; i++ ) {
         DrawTexture( 
             backgroundTexture, 
-            -backgroundTexture.width + i*backgroundTexture.width - playerOffset * 0.06, 
+            -backgroundTexture.width + i * backgroundTexture.width - playerOffset * 0.06, 
             0, 
             WHITE );
     }
@@ -64,126 +65,129 @@ std::vector<Goomba> &Map::getGoombas() {
     return goombas;
 }
 
-void Map::loadResources() {
+void Map::playMusic() {
 
-    int map = 1;
-    #define TESTE
+    std::map<std::string, Music> musics = ResourceManager::getMusics();
+    std::string key(TextFormat( "map%d", mapNumber ));
 
-    for ( char c = 'A'; c <= 'Z'; c++ ) {
-        tilesTexturesMap[c] = LoadTexture( TextFormat( "resources/images/tiles/tile_%c.png", c ) );
+    if ( !IsMusicStreamPlaying( musics[key] ) ) {
+        PlayMusicStream( musics[key] );
+    } else {
+        UpdateMusicStream( musics[key] );
     }
 
-    backgroundTexture = LoadTexture( TextFormat( "resources/images/backgrounds/background%d.png", map ) );
+}
 
-    // meus Deus, que coisa horrível kkkk
-    #ifdef TESTE
-        char *mapData = LoadFileText( TextFormat( "resources/maps/map1Testes.txt", map ) );
-    #else
-        char *mapData = LoadFileText( TextFormat( "resources/maps/map%d.txt", map ) );
-    #endif
-    
-    int currentColumn = 0;
-    int currentLine = 0;
+void Map::parseMap( int mapNumber, bool loadTestMap ) {
 
-    while ( *mapData != '\0' ) {
+    if ( !parsed ) {
 
-        float x = currentColumn*tileWidth;
-        float y = currentLine*tileWidth;
-
-        if ( maxWidth < x ) {
-            maxWidth = x;
+        this->mapNumber = mapNumber;
+        char *mapData;
+        
+        if ( loadTestMap ) {
+            mapData = LoadFileText( TextFormat( "resources/maps/mapTestes.txt" ) );
+        } else {
+            mapData = LoadFileText( TextFormat( "resources/maps/map%d.txt", mapNumber ) );
         }
 
-        if ( maxHeight < y ) {
-            maxHeight = y;
-        }
+        std::map<std::string, Texture2D> &textures = ResourceManager::getTextures();    
+        backgroundTexture = textures[TextFormat("background%d", mapNumber)];
 
-        switch ( *mapData ) {
-            case 'a':
-                tiles.push_back( 
-                    Tile( 
-                        Vector2( x, y ), 
-                        Vector2( tileWidth, tileWidth ), 
-                        GREEN,
-                        nullptr
-                    )
-                );
-                break;
-            case 'b':
-                tiles.push_back( 
-                    Tile( 
-                        Vector2( x, y ), 
-                        Vector2( tileWidth, tileWidth ), 
-                        BLUE,
-                        nullptr
-                    )
-                );
-                break;
-            case 'c':
-                tiles.push_back( 
-                    Tile( 
-                        Vector2( x, y ), 
-                        Vector2( tileWidth, tileWidth ), 
-                        RED,
-                        nullptr
-                    )
-                );
-                break;
-            case 'd':
-                tiles.push_back( 
-                    Tile( 
-                        Vector2( x, y ), 
-                        Vector2( tileWidth, tileWidth ), 
-                        ORANGE,
-                        nullptr
-                    )
-                );
-                break;
-            case 'o':
-                coins.push_back( Coin( Vector2( x, y ), Vector2( 25, 32 ), YELLOW ) );
-                break;
-            case '1':
-                goombas.push_back( Goomba( Vector2( x, y+2 ), Vector2( -100, 0 ), Vector2( 32, 30 ), YELLOW ) );
-                break;
-            case '\n':
-                currentLine++;
-                currentColumn = -1;
-                break;
-            case ' ':
-                break;
-            default:
-                int index = (*mapData)-'A';
-                if ( index >= 0 && index <= 26 ) {
+        int currentColumn = 0;
+        int currentLine = 0;
+
+        while ( *mapData != '\0' ) {
+
+            float x = currentColumn*tileWidth;
+            float y = currentLine*tileWidth;
+
+            if ( maxWidth < x ) {
+                maxWidth = x;
+            }
+
+            if ( maxHeight < y ) {
+                maxHeight = y;
+            }
+
+            switch ( *mapData ) {
+                case 'a':
                     tiles.push_back( 
                         Tile( 
                             Vector2( x, y ), 
                             Vector2( tileWidth, tileWidth ), 
-                            BLACK,
-                            &tilesTexturesMap[*mapData]
+                            GREEN,
+                            ""
                         )
                     );
-                }
-                break;
+                    break;
+                case 'b':
+                    tiles.push_back( 
+                        Tile( 
+                            Vector2( x, y ), 
+                            Vector2( tileWidth, tileWidth ), 
+                            BLUE,
+                            ""
+                        )
+                    );
+                    break;
+                case 'c':
+                    tiles.push_back( 
+                        Tile( 
+                            Vector2( x, y ), 
+                            Vector2( tileWidth, tileWidth ), 
+                            RED,
+                            ""
+                        )
+                    );
+                    break;
+                case 'd':
+                    tiles.push_back( 
+                        Tile( 
+                            Vector2( x, y ), 
+                            Vector2( tileWidth, tileWidth ), 
+                            ORANGE,
+                            ""
+                        )
+                    );
+                    break;
+                case 'o':
+                    coins.push_back( Coin( Vector2( x, y ), Vector2( 25, 32 ), YELLOW ) );
+                    break;
+                case '1':
+                    goombas.push_back( Goomba( Vector2( x, y+2 ), Vector2( -100, 0 ), Vector2( 32, 30 ), YELLOW ) );
+                    break;
+                case '\n':
+                    currentLine++;
+                    currentColumn = -1;
+                    break;
+                case ' ':
+                    break;
+                default:
+                    int index = (*mapData)-'A';
+                    if ( index >= 0 && index <= 26 ) {
+                        tiles.push_back( 
+                            Tile( 
+                                Vector2( x, y ), 
+                                Vector2( tileWidth, tileWidth ), 
+                                BLACK,
+                                std::string(1, *mapData)
+                            )
+                        );
+                    }
+                    break;
+            }
+
+            currentColumn++;
+            mapData++;
+            
         }
 
-        currentColumn++;
-        mapData++;
-        
+        maxHeight += tileWidth;
+        parsed = true;
+
     }
 
-    maxHeight += tileWidth;
-
-    Coin::loadResources();
-    Goomba::loadResources();
-
-}
-
-void Map::unloadResources() {
-    for ( char c = 'A'; c <= 'Z'; c++ ) {
-        UnloadTexture( tilesTexturesMap[c] );
-    }
-    Coin::unloadResources();
-    Goomba::unloadResources();
 }
 
 float Map::getMaxWidth() {

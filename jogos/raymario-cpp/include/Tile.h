@@ -7,15 +7,16 @@
  */
 #pragma once
 
+#include <string>
 #include <raylib.h>
 #include <Sprite.h>
 
 class Tile : public virtual Sprite {
 
-    Texture2D *texture;
+    std::string key;
 
 public:
-    Tile( Vector2 pos, Vector2 dim, Color color, Texture2D *texture );
+    Tile( Vector2 pos, Vector2 dim, Color color, std::string key );
     ~Tile();
     virtual void update();
     virtual void draw();

@@ -19,11 +19,13 @@
 class Map : public virtual Drawable {
 
     std::vector<Tile> tiles;
-    std::map<char, Texture2D> tilesTexturesMap;
-    Texture2D backgroundTexture;
     float maxWidth;
     float maxHeight;
     float playerOffset;
+
+    Texture2D backgroundTexture;
+    bool parsed;
+    int mapNumber;
 
     std::vector<Coin> coins;
     std::vector<Goomba> goombas;
@@ -36,11 +38,11 @@ public:
     std::vector<Tile> &getTiles();
     std::vector<Coin> &getCoins();
     std::vector<Goomba> &getGoombas();
-    void loadResources();
-    void unloadResources();
+    void parseMap( int mapNumber, bool loadTestMap );
     float getMaxWidth();
     float getMaxHeight();
     void setPlayerOffset( float playerOffset );
+    void playMusic();
 
     static int tileWidth;
 

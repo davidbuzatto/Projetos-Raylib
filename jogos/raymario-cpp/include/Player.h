@@ -22,19 +22,6 @@ class Player : public virtual Sprite {
     PlayerState state;
     Direction facingDirection;
     bool crouched;
-    
-    Texture2D texture1R;
-    Texture2D texture2R;
-    Texture2D texture1L;
-    Texture2D texture2L;
-    Texture2D texture1JR;
-    Texture2D texture2JR;
-    Texture2D texture1JL;
-    Texture2D texture2JL;
-    Texture2D textureDR;
-    Texture2D textureDL;
-    Texture2D texture1Dy;
-    Texture2D texture2Dy;
 
     float frameTimeWalking;
     float frameTimeRunning;
@@ -60,8 +47,5 @@ public:
     float getSpeedX();
     float getMaxSpeedX();
     float getJumpSpeed();
-
-    void loadResources();
-    void unloadResources();
 
 };
