@@ -9,9 +9,11 @@
 
 #include <vector>
 #include <raylib.h>
+#include <Player.h>
 #include <Sprite.h>
 #include <Direction.h>
 #include <CollisionProbe.h>
+#include <BaddieState.h>
 
 class Goomba : public virtual Sprite {
 
@@ -20,6 +22,7 @@ class Goomba : public virtual Sprite {
     int currentFrame;
     int maxFrames;
     Direction facingDirection;
+    BaddieState state;
 
     CollisionProbe cpN;
     CollisionProbe cpS;
@@ -33,5 +36,7 @@ public:
     virtual void draw();
     virtual bool checkCollision( Sprite &sprite );
     void updateCollisionProbes();
+    void activateWithPlayerProximity( Player &player );
+    BaddieState getState();
 
 };

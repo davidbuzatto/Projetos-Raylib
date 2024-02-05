@@ -59,7 +59,9 @@ void GameWorld::inputAndUpdate() {
 
     map.parseMap( 1, false );
     map.playMusic();
+    player.setActivationWidth( GetScreenWidth() * 2 );
 
+    std::vector<Coin> &coins = map.getCoins();
     std::vector<Goomba> &goombas = map.getGoombas();
     std::map<std::string, Sound> &sounds = ResourceManager::getSounds();
 
@@ -71,7 +73,7 @@ void GameWorld::inputAndUpdate() {
     // player x tiles collision resolution
     std::vector<Tile> &tiles = map.getTiles();
     for ( size_t i = 0; i < tiles.size(); i++ ) {
-        player.checkCollision( tiles[i] );
+        player.checkCollisionTile( tiles[i] );
     }
 
     // goombas x tiles collision resolution
@@ -82,25 +84,40 @@ void GameWorld::inputAndUpdate() {
     }
 
     // player x coins collision resolution
-    std::vector<Coin> &coins = map.getCoins();
-    std::vector<int> collectCoins;
+    std::vector<int> collectedIndexes;
     for ( size_t i = 0; i < coins.size(); i++ ) {
         if ( coins[i].checkCollision( player ) ) {
-            collectCoins.push_back(i);
+            collectedIndexes.push_back(i);
             PlaySound( sounds[ "coin" ] );
         }
     }
-    for ( int i = collectCoins.size() - 1; i >= 0; i-- ) {
-        coins.erase( coins.begin() + collectCoins[i] );
+    for ( int i = collectedIndexes.size() - 1; i >= 0; i-- ) {
+        coins.erase( coins.begin() + collectedIndexes[i] );
     }
+
+    // baddies activation
+    for ( size_t i = 0; i < goombas.size(); i++ ) {
+        Goomba *g = &goombas[i];
+        if ( g->getState() == BaddieState::IDLE ) {
+            g->activateWithPlayerProximity( player );
+        }
+    }
+
+    // player x baddies collision resolution
+    collectedIndexes.clear();
+    for ( size_t i = 0; i < goombas.size(); i++ ) {
+        if ( player.checkCollisionGoomba( goombas[i] ) ) {
+            collectedIndexes.push_back(i);
+            PlaySound( sounds[ "stomp" ] );
+        }
+    }
+    for ( int i = collectedIndexes.size() - 1; i >= 0; i-- ) {
+        goombas.erase( goombas.begin() + collectedIndexes[i] );
+    }
+
 
     if ( IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_TRIGGER_1 ) ) {
         debug = !debug;
-        if ( !debug ) {
-            for ( size_t i = 0; i < map.getTiles().size(); i++ ) {
-                map.getTiles()[i].setColor( BLACK );
-            }
-        }
     }
 
     float xc = GetScreenWidth() / 2.0;
@@ -111,25 +128,25 @@ void GameWorld::inputAndUpdate() {
     camera->offset.x = xc;
 
     if ( pxc < xc ) {
-        camera->target.x = xc;
+        camera->target.x = xc + Map::tileWidth;
         map.setPlayerOffset( 0 );         // x parallax
-    } else if ( pxc >= map.getMaxWidth() - xc ) {
+    } else if ( pxc >= map.getMaxWidth() - xc - Map::tileWidth ) {
         camera->target.x = map.getMaxWidth() - GetScreenWidth();
         camera->offset.x = 0;
     } else {
-        camera->target.x = pxc;
+        camera->target.x = pxc + Map::tileWidth;
         map.setPlayerOffset( pxc - xc );  // x parallax
     }
 
     camera->offset.y = yc;
 
     if ( pyc < yc ) {
-        camera->target.y = yc;
-    } else if ( pyc >= map.getMaxHeight() - yc ) {
+        camera->target.y = yc + Map::tileWidth;
+    } else if ( pyc >= map.getMaxHeight() - yc - Map::tileWidth ) {
         camera->target.y = map.getMaxHeight() - GetScreenHeight();
         camera->offset.y = 0;
     } else {
-        camera->target.y = pyc;
+        camera->target.y = pyc + Map::tileWidth;
     }
 
 }
@@ -166,14 +183,10 @@ void GameWorld::draw() {
     }
 
     GuiPanel( Rectangle( 20, 20, 100, 60 ), "Controles" );
-    if ( GuiButton( Rectangle( 30, 50, 60, 20 ), "debug" ) == 1 ) {
+    GuiCheckBox( Rectangle( 30, 50, 20, 20 ), "debug", &debug );
+    /*if ( GuiButton( Rectangle( 30, 50, 60, 20 ), "debug" ) == 1 ) {
         debug = !debug;
-        if ( !debug ) {
-            for ( size_t i = 0; i < map.getTiles().size(); i++ ) {
-                map.getTiles()[i].setColor( BLACK );
-            }
-        }
-    }
+    }*/
     
     EndDrawing();
 

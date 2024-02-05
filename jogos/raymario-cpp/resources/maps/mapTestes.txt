@@ -1,20 +1,21 @@
-                         
-F                                           E
-D                                           C
-D                        1                  C
-D                     IIII                  C
-D                                           C
-D                 IIIIIIII                  C
-D                                           C
-D             IIIIIIIIIIII                  C
-D                                           C
-D          IIIIIIIIIIIIIII                  C
-D                                           C
-D     I            I                        C
-D     I        1   I                        C
-D     IIIIIIIIIIIIII                        C
-D                                           C
-D  I                                        C
-D        o o 1 o o                          C
-HBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBG
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+///////////////////////////////////////////////
+/                                             /
+/                                          I E/
+/                                         I  C/
+/                         1              I   C/
+/                      IIII             I    C/
+/                                      I     C/
+/                  IIIIIIII           I      C/
+/                                    I       C/
+/              IIIIIIIIIIII         I        C/
+/                                  I         C/
+/           IIIIIIIIIIIIIII       I          C/
+/                                I           C/
+/      I            I           I            C/
+/      I        1   I          I             C/
+/      IIIIIIIIIIIIII         I              C/
+/                                            C/
+/   I                                        C/
+/         o o 1 o o                          C/
+/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBG/
+/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/

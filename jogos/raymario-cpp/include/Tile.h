@@ -14,9 +14,10 @@
 class Tile : public virtual Sprite {
 
     std::string key;
+    bool visible;
 
 public:
-    Tile( Vector2 pos, Vector2 dim, Color color, std::string key );
+    Tile( Vector2 pos, Vector2 dim, Color color, std::string key, bool visible );
     ~Tile();
     virtual void update();
     virtual void draw();

@@ -1,12 +1,13 @@
-# Arquivo de mapa
-# Linhas que iniciam com '#' representam comentários
+# Map file
+# Lines that starts with '#' are comments
 #
 #   Tiles:
-#   (Espaço) Tile Vazio
+#   <space>  Empty tile
+#   /        Invisible tile
 #   A..Z     Tiles A through Z
 #
 #   Items:
-#   o        Moeda
+#   o        Coin
 #   !        Mushroom
 #   f        Fire Flower
 #   u        One Up

@@ -10,6 +10,7 @@
 #include <PlayerState.h>
 #include <Direction.h>
 #include <GameWorld.h>
+#include <Goomba.h>
 #include <Tile.h>
 #include <typeinfo>
 #include <iostream>
@@ -18,18 +19,17 @@
 Player::Player( Vector2 pos, Vector2 dim, Vector2 vel, Color color, float speedX, float maxSpeedX, float jumpSpeed ) :
     Sprite( pos, dim, vel, color ),
     speedX( speedX ),
-    maxSpeedX( maxSpeedX),
-    jumpSpeed( jumpSpeed ) {
-
-    state = PlayerState::ON_GROUND;
-    facingDirection = Direction::RIGHT;
-    crouched = false;
-
-    frameTimeWalking = 0.1;
-    frameTimeRunning = 0.05;
-    frameAcum = 0;
-    currentFrame = 0;
-    maxFrames = 2;
+    maxSpeedX( maxSpeedX ),
+    jumpSpeed( jumpSpeed ),
+    state( PlayerState::ON_GROUND ),
+    facingDirection( Direction::RIGHT ),
+    crouched( false ),
+    frameTimeWalking( 0.1 ),
+    frameTimeRunning( 0.05 ),
+    frameAcum( 0 ),
+    currentFrame( 0 ),
+    maxFrames( 2 ),
+    activationWidth( 0 ) {
 
     cpN.setColor( PINK );
     cpS.setColor( VIOLET );
@@ -119,7 +119,7 @@ void Player::draw() {
             } else {
                 DrawTexture( textures["mario2JR"], pos.x, pos.y, WHITE );
             }
-        } 
+        }
     } else {
         if ( state == PlayerState::ON_GROUND ) {
             if ( crouched ) {
@@ -145,11 +145,19 @@ void Player::draw() {
         cpS.draw();
         cpE.draw();
         cpW.draw();
+        DrawRectangleLines( 
+            pos.x + dim.x / 2 - activationWidth / 2, 
+            pos.y + dim.y / 2 - activationWidth / 2, 
+            activationWidth, activationWidth, BLACK );
     }
 
 }
 
 bool Player::checkCollision( Sprite &sprite ) {
+    return false;
+}
+
+bool Player::checkCollisionTile( Sprite &sprite ) {
 
     try {
 
@@ -204,6 +212,49 @@ bool Player::checkCollision( Sprite &sprite ) {
 
 }
 
+bool Player::checkCollisionGoomba( Sprite &sprite ) {
+
+    try {
+        
+        updateCollisionProbes();
+        Goomba &goomba = dynamic_cast<Goomba&>(sprite);
+        Rectangle goombaRect( goomba.getX(), goomba.getY(), goomba.getWidth(), goomba.getHeight() );
+
+        Rectangle cpNRect( cpN.getX(), cpN.getY(), cpN.getWidth(), cpN.getHeight() );
+        Rectangle cpSRect( cpS.getX(), cpS.getY(), cpS.getWidth(), cpS.getHeight() );
+        Rectangle cpERect( cpE.getX(), cpE.getY(), cpE.getWidth(), cpE.getHeight() );
+        Rectangle cpWRect( cpW.getX(), cpW.getY(), cpW.getWidth(), cpW.getHeight() );
+        
+        if ( state == PlayerState::JUMPING || vel.y > 0 ) {
+            if ( CheckCollisionRecs( cpNRect, goombaRect ) ||
+                 CheckCollisionRecs( cpERect, goombaRect ) ||
+                 CheckCollisionRecs( cpWRect, goombaRect ) ) {
+                // die
+                updateCollisionProbes();
+                return false;
+            } else if ( CheckCollisionRecs( cpSRect, goombaRect ) ) {
+                pos.y = goomba.getY() - dim.y;
+                vel.y = jumpSpeed;
+                updateCollisionProbes();
+                state = PlayerState::JUMPING;
+                return true;
+            }
+        } else if ( CheckCollisionRecs( cpNRect, goombaRect ) ||
+                    CheckCollisionRecs( cpSRect, goombaRect ) ||
+                    CheckCollisionRecs( cpERect, goombaRect ) ||
+                    CheckCollisionRecs( cpWRect, goombaRect ) ) {
+            // die
+            updateCollisionProbes();
+            return false;
+        }
+
+    } catch ( std::bad_cast const& ) {
+    }
+
+    return false;
+
+}
+
 void Player::setState( PlayerState state ) {
     this->state = state;
 }
@@ -238,4 +289,12 @@ float Player::getMaxSpeedX() {
 
 float Player::getJumpSpeed() {
     return jumpSpeed;
+}
+
+float Player::getActivationWidth() {
+    return activationWidth;
+}
+
+void Player::setActivationWidth( float activationWidth ) {
+    this->activationWidth = activationWidth;
 }

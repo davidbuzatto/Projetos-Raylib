@@ -11,6 +11,7 @@
 #include <PlayerState.h>
 #include <CollisionProbe.h>
 #include <Sprite.h>
+#include <Tile.h>
 #include <Direction.h>
 
 class Player : public virtual Sprite {
@@ -29,6 +30,8 @@ class Player : public virtual Sprite {
     int currentFrame;
     int maxFrames;
 
+    float activationWidth;
+
     CollisionProbe cpN;
     CollisionProbe cpS;
     CollisionProbe cpE;
@@ -40,6 +43,8 @@ public:
     virtual void update();
     virtual void draw();
     virtual bool checkCollision( Sprite &sprite );
+    bool checkCollisionTile( Sprite &sprite );
+    bool checkCollisionGoomba( Sprite &sprite );
     void setState( PlayerState state );
     PlayerState getState() const;
     void updateCollisionProbes();
@@ -47,5 +52,7 @@ public:
     float getSpeedX();
     float getMaxSpeedX();
     float getJumpSpeed();
+    float getActivationWidth();
+    void setActivationWidth( float activationWidth );
 
 };

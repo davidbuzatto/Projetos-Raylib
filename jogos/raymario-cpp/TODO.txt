@@ -1,8 +1,11 @@
-limitar o personagem com blocos visíveis ou invisíveis (extremos da fase)
-inimigos colidem entre si?
-ativar inimigos apenas quando a câmera deslizar próximo (evitar ativação prematura)
-permitir comentários nos arquivos de mapa?
 colisão jogador x inimigos
+    matar inimigo - resolver queda (apenas desenho)
+    morrer
+morrer de queda
+tiles invisíveis para os inimigos (colidem, mas o jogador não)
+backgrounds originais
+inimigos colidem entre si?
+permitir comentários nos arquivos de mapa?
 refatorar
 polimorfismo
 terminar inimigos

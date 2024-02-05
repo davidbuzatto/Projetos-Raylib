@@ -17,12 +17,12 @@
 #include <raylib.h>
 
 Goomba::Goomba( Vector2 pos, Vector2 dim, Vector2 vel, Color color ) :
-    Sprite( pos, dim, vel, color ) {
-    
-    frameTime = 0.2;
-    frameAcum = 0;
-    currentFrame = 0;
-    facingDirection = Direction::LEFT;
+    Sprite( pos, dim, vel, color ),
+    frameTime( 0.2 ),
+    frameAcum( 0 ),
+    currentFrame( 0 ),
+    facingDirection( Direction::LEFT ),
+    state( BaddieState::IDLE ) {
 
     Color c = ColorFromHSV( GetRandomValue( 0, 360 ), 1 , 0.9 );
     /*Color c( GetRandomValue( 100, 255 ),
@@ -42,25 +42,30 @@ Goomba::~Goomba() {
 
 void Goomba::update() {
     
-    float delta = GetFrameTime();
+    if ( state == BaddieState::ACTIVE ) {
 
-    frameAcum += delta;
-    if ( frameAcum >= frameTime ) {
-        frameAcum = 0;
-        currentFrame++;
-        currentFrame %= 2;
+        float delta = GetFrameTime();
+
+        frameAcum += delta;
+        if ( frameAcum >= frameTime ) {
+            frameAcum = 0;
+            currentFrame++;
+            currentFrame %= 2;
+        }
+
+        if ( vel.x >= 0 ) {
+            facingDirection = Direction::RIGHT;
+        } else {
+            facingDirection = Direction::LEFT;
+        }
+
+        pos.x = pos.x + vel.x * delta;
+        pos.y = pos.y + vel.y * delta;
+
+        vel.y += GameWorld::gravity;
+
     }
 
-    if ( vel.x >= 0 ) {
-        facingDirection = Direction::RIGHT;
-    } else {
-        facingDirection = Direction::LEFT;
-    }
-
-    pos.x = pos.x + vel.x * delta;
-    pos.y = pos.y + vel.y * delta;
-
-    vel.y += GameWorld::gravity;
     updateCollisionProbes();
 
 }
@@ -152,4 +157,20 @@ void Goomba::updateCollisionProbes() {
     cpW.setX( pos.x );
     cpW.setY( pos.y + dim.y / 2 - cpW.getHeight() / 2 );
 
+}
+
+void Goomba::activateWithPlayerProximity( Player &player ) {
+    if ( CheckCollisionPointRec( 
+        Vector2( pos.x + dim.x/2, pos.y + dim.y/2 ),
+        Rectangle( 
+            player.getX() + player.getWidth() / 2 - player.getActivationWidth() / 2, 
+            player.getY() + player.getHeight() / 2 - player.getActivationWidth() / 2,
+            player.getActivationWidth(),
+            player.getActivationWidth() ) ) ) {
+        state = BaddieState::ACTIVE;
+    }
+}
+
+BaddieState Goomba::getState() {
+    return state;
 }

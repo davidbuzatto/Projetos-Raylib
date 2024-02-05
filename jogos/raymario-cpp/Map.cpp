@@ -35,7 +35,7 @@ void Map::draw() {
         DrawTexture( 
             backgroundTexture, 
             -backgroundTexture.width + i * backgroundTexture.width - playerOffset * 0.06, 
-            0, 
+            tileWidth, 
             WHITE );
     }
 
@@ -102,12 +102,13 @@ void Map::parseMap( int mapNumber, bool loadTestMap ) {
             float x = currentColumn*tileWidth;
             float y = currentLine*tileWidth;
 
-            if ( maxWidth < x ) {
-                maxWidth = x;
-            }
-
-            if ( maxHeight < y ) {
-                maxHeight = y;
+            if ( *mapData != '/' ) {
+                if ( maxWidth < x ) {
+                    maxWidth = x;
+                }
+                if ( maxHeight < y ) {
+                    maxHeight = y;
+                }
             }
 
             switch ( *mapData ) {
@@ -117,7 +118,8 @@ void Map::parseMap( int mapNumber, bool loadTestMap ) {
                             Vector2( x, y ), 
                             Vector2( tileWidth, tileWidth ), 
                             GREEN,
-                            ""
+                            "",
+                            true
                         )
                     );
                     break;
@@ -127,7 +129,8 @@ void Map::parseMap( int mapNumber, bool loadTestMap ) {
                             Vector2( x, y ), 
                             Vector2( tileWidth, tileWidth ), 
                             BLUE,
-                            ""
+                            "",
+                            true
                         )
                     );
                     break;
@@ -137,7 +140,8 @@ void Map::parseMap( int mapNumber, bool loadTestMap ) {
                             Vector2( x, y ), 
                             Vector2( tileWidth, tileWidth ), 
                             RED,
-                            ""
+                            "",
+                            true
                         )
                     );
                     break;
@@ -147,7 +151,19 @@ void Map::parseMap( int mapNumber, bool loadTestMap ) {
                             Vector2( x, y ), 
                             Vector2( tileWidth, tileWidth ), 
                             ORANGE,
-                            ""
+                            "",
+                            true
+                        )
+                    );
+                    break;
+                case '/':
+                    tiles.push_back( 
+                        Tile( 
+                            Vector2( x, y ), 
+                            Vector2( tileWidth, tileWidth ), 
+                            WHITE,
+                            "",
+                            false
                         )
                     );
                     break;
@@ -155,7 +171,7 @@ void Map::parseMap( int mapNumber, bool loadTestMap ) {
                     coins.push_back( Coin( Vector2( x, y ), Vector2( 25, 32 ), YELLOW ) );
                     break;
                 case '1':
-                    goombas.push_back( Goomba( Vector2( x, y+2 ), Vector2( -100, 0 ), Vector2( 32, 30 ), YELLOW ) );
+                    goombas.push_back( Goomba( Vector2( x, y ), Vector2( -100, 0 ), Vector2( 32, 30 ), YELLOW ) );
                     break;
                 case '\n':
                     currentLine++;
@@ -171,7 +187,8 @@ void Map::parseMap( int mapNumber, bool loadTestMap ) {
                                 Vector2( x, y ), 
                                 Vector2( tileWidth, tileWidth ), 
                                 BLACK,
-                                std::string(1, *mapData)
+                                std::string(1, *mapData),
+                                true
                             )
                         );
                     }
@@ -183,6 +200,7 @@ void Map::parseMap( int mapNumber, bool loadTestMap ) {
             
         }
 
+        maxWidth -= tileWidth;
         maxHeight += tileWidth;
         parsed = true;
 
