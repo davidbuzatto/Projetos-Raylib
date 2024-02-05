@@ -57,7 +57,7 @@ GameWorld::~GameWorld() {
  */
 void GameWorld::inputAndUpdate() {
 
-    map.parseMap( 1, false );
+    map.parseMap( 1, true );
     map.playMusic();
     player.setActivationWidth( GetScreenWidth() * 2 );
 
@@ -184,9 +184,6 @@ void GameWorld::draw() {
 
     GuiPanel( Rectangle( 20, 20, 100, 60 ), "Controles" );
     GuiCheckBox( Rectangle( 30, 50, 20, 20 ), "debug", &debug );
-    /*if ( GuiButton( Rectangle( 30, 50, 60, 20 ), "debug" ) == 1 ) {
-        debug = !debug;
-    }*/
     
     EndDrawing();
 

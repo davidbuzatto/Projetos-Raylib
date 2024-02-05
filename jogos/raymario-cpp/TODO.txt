@@ -1,3 +1,4 @@
+melhorar resolução de colisões retornando o tipo da colisão e não verdadeiro ou falso
 colisão jogador x inimigos
     matar inimigo - resolver queda (apenas desenho)
     morrer
