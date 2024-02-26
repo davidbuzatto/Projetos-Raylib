@@ -5,22 +5,26 @@
  * 
  * @copyright Copyright (c) 2024
  */
-#include <Tile.h>
-#include <ResourceManager.h>
-#include <GameWorld.h>
-
+#include "GameWorld.h"
+#include "raylib.h"
+#include "ResourceManager.h"
+#include "Tile.h"
 #include <iostream>
 #include <string>
-#include <raylib.h>
+#include <utility>
 
 Tile::Tile( Vector2 pos, Vector2 dim, Color color, std::string key, bool visible ) :
-    Sprite( pos, dim, color ),
-    key( key ),
-    visible( visible ) {
+    Tile( pos, dim, color, std::move(key), visible, false ) {
 }
 
-Tile::~Tile() {
+Tile::Tile( Vector2 pos, Vector2 dim, Color color, std::string key, bool visible, bool onlyBaddies ) :
+    Sprite( pos, dim, color ),
+    key( std::move(key) ),
+    visible( visible ),
+    onlyBaddies( onlyBaddies ) {
 }
+
+Tile::~Tile() = default;
 
 void Tile::update() {
 }
@@ -39,12 +43,12 @@ void Tile::draw() {
 
     }
 
-    if ( GameWorld::debug && !(color.r == 0 && color.g == 0 && color.b == 0) ) {
+    if ( GameWorld::debug && color.a != 0 ) {
         DrawRectangle( pos.x, pos.y, dim.x, dim.y, Fade( color, 0.5 ) );
     }
 
 }
 
-bool Tile::checkCollision( Sprite &sprite ) {
-    return false;
+bool Tile::isOnlyBaddies() const {
+    return onlyBaddies;
 }

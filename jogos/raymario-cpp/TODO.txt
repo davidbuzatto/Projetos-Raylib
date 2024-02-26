@@ -1,15 +1,21 @@
-melhorar resolução de colisões retornando o tipo da colisão e não verdadeiro ou falso
-colisão jogador x inimigos
-    matar inimigo - resolver queda (apenas desenho)
-    morrer
-morrer de queda
-tiles invisíveis para os inimigos (colidem, mas o jogador não)
-backgrounds originais
-inimigos colidem entre si?
-permitir comentários nos arquivos de mapa?
-refatorar
-polimorfismo
-terminar inimigos
-criar caixas interativas (moedas, "?" etc)
-criar GUI
-criar transição entre fases
+para versão final:
+    
+    - conferir fases atuais
+    
+    - criar mais fases
+    
+    - chamar construtores um nível acima
+    
+    - transformação/transição
+        small->super;
+        small->flower;
+        super->flower;
+        super->small;
+        flower->small.
+            
+futuro:
+    separar tiles de cenário, fundo etc
+    editor de fases - salvar e carregar, usar formato binário?
+    - otimizações:
+        - ideal é tratar tudo em um esquema matricial e ativar apenas as entidades do jogo
+          que estiverem dentro de um raio ou retângulo de ação

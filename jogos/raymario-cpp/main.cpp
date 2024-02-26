@@ -5,14 +5,11 @@
  * 
  * @copyright Copyright (c) 2024
  */
-#include <GameWindow.h>
-#include <Coin.h>
-#include <vector>
+#include "GameWindow.h"
 
 int main( void ) {
 
-    GameWindow gameWindow( 800, 640, "Ray Mario", true );
-    //GameWindow gameWindow( 800, 640, "Ray Mario", 60, true, false, true, false, false, false, false );
+    GameWindow gameWindow( 576, 448, "RayMario", true );
     gameWindow.init();
 
     return 0;

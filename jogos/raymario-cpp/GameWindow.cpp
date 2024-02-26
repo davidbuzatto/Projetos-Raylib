@@ -5,11 +5,11 @@
  * 
  * @copyright Copyright (c) 2024
  */
-#include <GameWindow.h>
-
+#include "GameWindow.h"
+#include "raylib.h"
 #include <iostream>
 #include <string>
-#include <raylib.h>
+#include <utility>
 
 /**
  * @brief Construct a new GameWindow object
@@ -23,19 +23,19 @@ GameWindow::GameWindow( bool initAudio ) :
 }
 
 GameWindow::GameWindow( int width, int height, std::string title, bool initAudio ) : 
-    GameWindow( width, height, title, 60, true, false, false, false, false, false, initAudio ) {
+    GameWindow( width, height, std::move(title), 60, true, false, false, false, false, false, initAudio ) {
 }
 
 GameWindow::GameWindow( int width, int height, std::string title, int targetFPS, bool initAudio ) : 
-    GameWindow( width, height, title, targetFPS, true, false, false, false, false, false, initAudio ) {
+    GameWindow( width, height, std::move(title), targetFPS, true, false, false, false, false, false, initAudio ) {
 }
 
 GameWindow::GameWindow( int width, int height, std::string title, bool antialiasing, bool initAudio ) : 
-    GameWindow( width, height, title, 60, antialiasing, false, false, false, false, false, initAudio ) {
+    GameWindow( width, height, std::move(title), 60, antialiasing, false, false, false, false, false, initAudio ) {
 }
 
 GameWindow::GameWindow( int width, int height, std::string title, int targetFPS, bool antialiasing, bool initAudio ) : 
-    GameWindow( width, height, title, targetFPS, antialiasing, false, false, false, false, false, initAudio ) {
+    GameWindow( width, height, std::move(title), targetFPS, antialiasing, false, false, false, false, false, initAudio ) {
 }
 
 GameWindow::GameWindow( int width, int height, std::string title, int targetFPS,
@@ -43,7 +43,7 @@ GameWindow::GameWindow( int width, int height, std::string title, int targetFPS,
                         bool undecorated, bool alwaysOnTop, bool alwaysRun, bool initAudio ) :
                         width( width ),
                         height( height ),
-                        title( title ),
+                        title( std::move(title)),
                         targetFPS( targetFPS ),
                         antialiasing( antialiasing ),
                         resizable( resizable ),
@@ -52,17 +52,14 @@ GameWindow::GameWindow( int width, int height, std::string title, int targetFPS,
                         alwaysOnTop( alwaysOnTop ),
                         alwaysRun( alwaysRun ),
                         initAudio( initAudio ),
+                        camera( Camera2D() ),
                         initialized( false ) {
-
-    std::cout << "creating game window..." << std::endl;
-
 }
 
 /**
  * @brief Destroy the GameWindow object
  */
 GameWindow::~GameWindow() {
-    std::cout << "destroying game window..." << std::endl;
 }
 
 /**
@@ -72,8 +69,6 @@ GameWindow::~GameWindow() {
 void GameWindow::init() {
 
     if ( !initialized ) {
-
-        std::cout << "initializing GUI..." << std::endl;
 
         if ( antialiasing ) {
             SetConfigFlags( FLAG_MSAA_4X_HINT );
@@ -100,6 +95,8 @@ void GameWindow::init() {
         }
 
         InitWindow( width, height, title.c_str() );
+        SetWindowIcon( LoadImage( "resources/icon.png" ) );
+        SetExitKey( 0 );
         
         if ( initAudio ) {
             InitAudioDevice();
@@ -109,8 +106,6 @@ void GameWindow::init() {
         GameWorld::loadResources();
         
         initialized = true;
-
-        std::cout << "starting game loop..." << std::endl;
         
         camera.target = Vector2( 0, 0 );
         camera.offset = Vector2( GetScreenWidth()/2.0, GetScreenHeight() - 104 );
@@ -122,8 +117,6 @@ void GameWindow::init() {
             gw.inputAndUpdate();
             gw.draw();
         }
-
-        std::cout << "finishing GUI..." << std::endl;
 
         GameWorld::unloadResources();
         if ( initAudio ) {
@@ -197,7 +190,7 @@ void GameWindow::setHeight( int height ) {
 
 void GameWindow::setTitle( std::string title ) {
     if ( !initialized ) {
-        this->title = title;
+        this->title = std::move(title);
     }
 }
 

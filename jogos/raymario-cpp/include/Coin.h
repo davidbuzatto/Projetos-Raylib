@@ -7,25 +7,20 @@
  */
 #pragma once
 
-#include <vector>
-#include <raylib.h>
-#include <Sprite.h>
+#include "Item.h"
+#include "Mario.h"
+#include "raylib.h"
 
-class Coin : public virtual Sprite {
-
-    float frameTime;
-    float frameAcum;
-    int currentFrame;
-    int maxFrames;
+class Coin : public virtual Item {
     
 public:
-    Coin( Vector2 pos, Vector2 dim, Color color );
-    ~Coin();
-    virtual void update();
-    virtual void draw();
-    virtual bool checkCollision( Sprite &sprite );
 
-    static void loadResources();
-    static void unloadResources();
+    Coin( Vector2 pos, Vector2 dim, Color color );
+    ~Coin() override;
+
+    void update() override;
+    void draw() override;
+    void playCollisionSound() override;
+    void updateMario( Mario& mario ) override;
 
 };

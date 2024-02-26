@@ -5,26 +5,20 @@
  * 
  * @copyright Copyright (c) 2024
  */
-#include <Coin.h>
-#include <ResourceManager.h>
-#include <Player.h>
-#include <vector>
+#include "Coin.h"
+#include "GameWorld.h"
+#include "Mario.h"
+#include "raylib.h"
+#include "ResourceManager.h"
+#include "Sprite.h"
 #include <map>
 #include <string>
-#include <iostream>
-#include <raylib.h>
 
 Coin::Coin( Vector2 pos, Vector2 dim, Color color ) :
-    Sprite( pos, dim, color ) {
-    
-    frameTime = 0.1;
-    frameAcum = 0;
-    currentFrame = 0;
-    
+    Sprite( pos, dim, color, 0.1, 4 ) {
 }
 
-Coin::~Coin() {
-}
+Coin::~Coin() = default;
 
 void Coin::update() {
     
@@ -32,31 +26,33 @@ void Coin::update() {
     if ( frameAcum >= frameTime ) {
         frameAcum = 0;
         currentFrame++;
-        currentFrame %= 5;
+        currentFrame %= maxFrames;
     }
 
 }
 
 void Coin::draw() {
 
-    update();
-    std::map<std::string, Texture2D> &textures = ResourceManager::getTextures();
-    DrawTexture( textures[std::string( TextFormat( "coin%d", currentFrame+1 ))], pos.x, pos.y, WHITE );
+    DrawTexture( ResourceManager::getTextures()[std::string( TextFormat( "coin%d", currentFrame ))], pos.x, pos.y, WHITE );
+
+    if ( GameWorld::debug ) {
+        cpN.draw();
+        cpS.draw();
+        cpE.draw();
+        cpW.draw();
+    }
 
 }
 
-bool Coin::checkCollision( Sprite &sprite ) {
+void Coin::playCollisionSound() {
+    PlaySound( ResourceManager::getSounds()["coin"] );
+}
 
-    try {
-
-        Player &player = dynamic_cast<Player&>(sprite);
-        Rectangle coinRect( pos.x, pos.y, dim.x, dim.y );
-        Rectangle playerRect( player.getX(), player.getY(), player.getWidth(), player.getHeight() );
-        return CheckCollisionRecs( coinRect, playerRect );
-
-    } catch ( std::bad_cast const& ) {
+void Coin::updateMario( Mario& mario ) {
+    mario.addCoins( 1 );
+    if ( mario.getCoins() >= 100 ) {
+        mario.addLives( 1 );
+        mario.setCoins( mario.getCoins() - 100 );
+        PlaySound( ResourceManager::getSounds()["1up"] );
     }
-
-    return false;
-
 }

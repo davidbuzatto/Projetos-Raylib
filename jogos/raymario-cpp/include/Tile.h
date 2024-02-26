@@ -7,20 +7,27 @@
  */
 #pragma once
 
+#include "raylib.h"
+#include "Sprite.h"
 #include <string>
-#include <raylib.h>
-#include <Sprite.h>
 
 class Tile : public virtual Sprite {
 
+protected:
     std::string key;
     bool visible;
+    bool onlyBaddies;
+    bool showCollisionOnDebug;
 
 public:
+
     Tile( Vector2 pos, Vector2 dim, Color color, std::string key, bool visible );
-    ~Tile();
-    virtual void update();
-    virtual void draw();
-    virtual bool checkCollision( Sprite &sprite );
+    Tile( Vector2 pos, Vector2 dim, Color color, std::string key, bool visible, bool onlyBaddies );
+    ~Tile() override;
+
+    void update() override;
+    void draw() override;
+
+    bool isOnlyBaddies() const;
 
 };
