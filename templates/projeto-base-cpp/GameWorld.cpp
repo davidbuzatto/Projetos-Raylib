@@ -25,14 +25,14 @@
  * @brief Construct a new GameWorld object
  */
 GameWorld::GameWorld() {
-    std::cout << "creating game world..." << std::endl;
+    
 }
 
 /**
  * @brief Destroy the GameWorld object
  */
 GameWorld::~GameWorld() {
-    std::cout << "destroying game world..." << std::endl;
+    
 }
 
 /**
@@ -68,7 +68,6 @@ void GameWorld::draw() const {
  * Should be called inside the constructor.
  */
 void GameWorld::loadResources() {
-    std::cout << "loading resources..." << std::endl;
     ResourceManager::loadTextures();
     ResourceManager::loadSounds();
     ResourceManager::loadMusics();
@@ -79,7 +78,6 @@ void GameWorld::loadResources() {
  * Should be called inside the destructor.
  */
 void GameWorld::unloadResources() {
-    std::cout << "unloading resources..." << std::endl;
     ResourceManager::unloadTextures();
     ResourceManager::unloadSounds();
     ResourceManager::unloadMusics();

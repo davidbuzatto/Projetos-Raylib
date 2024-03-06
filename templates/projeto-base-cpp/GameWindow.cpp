@@ -53,16 +53,14 @@ GameWindow::GameWindow( int width, int height, std::string title, int targetFPS,
                         alwaysRun( alwaysRun ),
                         initAudio( initAudio ),
                         initialized( false ) {
-
-    std::cout << "creating game window..." << std::endl;
-
+    
 }
 
 /**
  * @brief Destroy the GameWindow object
  */
 GameWindow::~GameWindow() {
-    std::cout << "destroying game window..." << std::endl;
+    
 }
 
 /**
@@ -72,8 +70,6 @@ GameWindow::~GameWindow() {
 void GameWindow::init() {
 
     if ( !initialized ) {
-
-        std::cout << "initializing GUI..." << std::endl;
 
         if ( antialiasing ) {
             SetConfigFlags( FLAG_MSAA_4X_HINT );
@@ -107,14 +103,10 @@ void GameWindow::init() {
         GameWorld::loadResources();
         initialized = true;
 
-        std::cout << "starting game loop..." << std::endl;
-
         while ( !WindowShouldClose() ) {
             gw.inputAndUpdate();
             gw.draw();
         }
-
-        std::cout << "finishing GUI..." << std::endl;
 
         GameWorld::unloadResources();
         if ( initAudio ) {
