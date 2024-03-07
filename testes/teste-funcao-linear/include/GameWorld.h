@@ -7,8 +7,11 @@
  */
 #pragma once
 
+#include "Tile.h"
+
 typedef struct GameWorld {
-    int dummy;
+    Tile tiles[10];
+    int tileQuantity;
 } GameWorld;
 
 /**

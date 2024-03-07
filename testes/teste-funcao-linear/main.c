@@ -15,17 +15,17 @@
 int main( void ) {
 
     GameWindow *gameWindow = createGameWindow(
-        800,             // height
-        450,             // width   
-        "Window Title",  // title
-        60,              // target FPS
-        true,            // antialiazing
-        false,           // resizable
-        false,           // full screen
-        false,           // undecorated
-        false,           // always on top
-        false,           // always run
-        false            // init audio
+        800,                // height
+        450,                // width   
+        "Slope Collision",  // title
+        60,                // target FPS
+        true,              // antialiazing
+        false,             // resizable
+        false,             // full screen
+        false,             // undecorated
+        false,             // always on top
+        false,             // always run
+        false              // init audio
     );
 
     initGameWindow( gameWindow );
