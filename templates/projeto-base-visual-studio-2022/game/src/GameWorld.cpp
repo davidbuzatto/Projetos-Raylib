@@ -36,7 +36,7 @@ void GameWorld::inputAndUpdate() {
 /**
  * @brief Draws the state of the game.
  */
-void GameWorld::draw() const {
+void GameWorld::draw() {
 
     BeginDrawing();
     ClearBackground( WHITE );

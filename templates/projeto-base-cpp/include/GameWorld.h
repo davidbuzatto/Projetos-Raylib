@@ -24,17 +24,17 @@ public:
     /**
      * @brief Destroy the GameWorld object.
      */
-    ~GameWorld();
+    virtual ~GameWorld();
 
     /**
      * @brief Reads user input and updates the state of the game.
      */
-    static void inputAndUpdate();
+    void inputAndUpdate();
 
     /**
      * @brief Draws the state of the game.
      */
-    virtual void draw() const;
+    void draw() override;
 
     /**
      * @brief Load game resources like images, textures, sounds, fonts, shaders,

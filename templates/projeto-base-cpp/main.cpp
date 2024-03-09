@@ -10,7 +10,20 @@
 
 int main( void ) {
 
-    GameWindow gameWindow( 800, 450, "Window Title", false );
+    GameWindow gameWindow( 
+        800,             // height
+        450,             // width   
+        "Window Title",  // title
+        60,              // target FPS
+        true,            // antialiazing
+        false,           // resizable
+        false,           // full screen
+        false,           // undecorated
+        false,           // always on top
+        false,           // always run
+        false            // init audio
+    );
+    
     gameWindow.init();
 
     return 0;

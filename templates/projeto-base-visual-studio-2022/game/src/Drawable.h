@@ -9,5 +9,5 @@
 #pragma once
 
 class Drawable {
-    virtual void draw() const = 0;
+    virtual void draw() = 0;
 };
