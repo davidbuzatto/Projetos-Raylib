@@ -1,12 +1,12 @@
 /**
  * @file utils.cpp
  * @author Prof. Dr. David Buzatto
- * @brief Utilitary functions implementation.
+ * @brief Utility functions implementation.
  * 
  * @copyright Copyright (c) 2024
  */
-#include <raylib.h>
-#include <utils.h>
+#include "raylib.h"
+#include "utils.h"
 
 double toRadians( double degrees ) {
     return degrees * PI / 180.0;

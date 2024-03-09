@@ -5,11 +5,11 @@
  * 
  * @copyright Copyright (c) 2024
  */
-#include <GameWindow.h>
-
 #include <iostream>
 #include <string>
-#include <raylib.h>
+
+#include "GameWindow.h"
+#include "raylib.h"
 
 /**
  * @brief Construct a new GameWindow object
@@ -40,7 +40,7 @@ GameWindow::GameWindow( int width, int height, std::string title, int targetFPS,
 
 GameWindow::GameWindow( int width, int height, std::string title, int targetFPS,
                         bool antialiasing, bool resizable, bool fullScreen,
-                        bool undecorated, bool alwaysOnTop, bool alwaysRun, bool initAudio ) :
+                        bool undecorated, bool alwaysOnTop, bool alwaysRun, bool initAudio ):
                         width( width ),
                         height( height ),
                         title( title ),
@@ -59,9 +59,7 @@ GameWindow::GameWindow( int width, int height, std::string title, int targetFPS,
 /**
  * @brief Destroy the GameWindow object
  */
-GameWindow::~GameWindow() {
-    
-}
+GameWindow::~GameWindow() = default;
 
 /**
  * @brief Initializes the Window, starts the game loop and, when it

@@ -5,35 +5,26 @@
  * 
  * @copyright Copyright (c) 2024
  */
-#include <GameWorld.h>
-#include <ResourceManager.h>
-
 #include <iostream>
-#include <fmt/format.h>
-#include <cmath>
 #include <string>
-#include <cstring>
-#include <ctime>
-#include <cassert>
-#include <raylib.h>
-//#include <raymath.h>
+
+#include "GameWorld.h"
+#include "ResourceManager.h"
+#include "raylib.h"
+//#include "raymath.h"
 //#define RAYGUI_IMPLEMENTATION
-//#include <raygui.h>
+//#include "raygui.h"
 //#undef RAYGUI_IMPLEMENTATION
 
 /**
  * @brief Construct a new GameWorld object
  */
-GameWorld::GameWorld() {
-    
-}
+GameWorld::GameWorld() = default;
 
 /**
  * @brief Destroy the GameWorld object
  */
-GameWorld::~GameWorld() {
-    
-}
+GameWorld::~GameWorld() = default;
 
 /**
  * @brief Reads user input and updates the state of the game.

@@ -11,8 +11,7 @@
 
 #include <string>
 
-#include <raylib.h>
-#include <GameWorld.h>
+#include "GameWorld.h"
 
 class GameWindow {
     

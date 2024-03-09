@@ -6,7 +6,7 @@
  * 
  * @copyright Copyright (c) 2024
  */
-#include <GameWindow.h>
+#include "GameWindow.h"
 
 int main( void ) {
 

@@ -5,10 +5,11 @@
  * 
  * @copyright Copyright (c) 2024
  */
-#include <ResourceManager.h>
 #include <map>
 #include <string>
-#include <raylib.h>
+
+#include "ResourceManager.h"
+#include "raylib.h"
 
 std::map<std::string, Texture2D> ResourceManager::textures;
 std::map<std::string, Sound> ResourceManager::sounds;

@@ -8,8 +8,7 @@
  */
 #pragma once
 
-#include <raylib.h>
-#include <Drawable.h>
+#include "Drawable.h"
 
 class GameWorld : public virtual Drawable {
 
@@ -30,7 +29,7 @@ public:
     /**
      * @brief Reads user input and updates the state of the game.
      */
-    void inputAndUpdate();
+    static void inputAndUpdate();
 
     /**
      * @brief Draws the state of the game.

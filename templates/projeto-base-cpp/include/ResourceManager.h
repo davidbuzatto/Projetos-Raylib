@@ -9,7 +9,8 @@
 
 #include <map>
 #include <string>
-#include <raylib.h>
+
+#include "raylib.h"
 
 class ResourceManager {
 
