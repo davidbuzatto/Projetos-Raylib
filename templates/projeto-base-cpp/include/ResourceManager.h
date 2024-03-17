@@ -18,8 +18,7 @@ private:
     static std::map<std::string, Texture2D> textures;
     static std::map<std::string, Sound> sounds;
     static std::map<std::string, Music> musics;
-
-public:
+    
     static void loadTextures();
     static void loadSounds();
     static void loadMusics();
@@ -33,6 +32,10 @@ public:
     static void unloadTexture( std::string key );
     static void unloadSound( std::string key );
     static void unloadMusic( std::string key );
+
+public:
+    static void loadResources();
+    static void unloadResources();
 
     static std::map<std::string, Texture2D> &getTextures();
     static std::map<std::string, Sound> &getSounds();

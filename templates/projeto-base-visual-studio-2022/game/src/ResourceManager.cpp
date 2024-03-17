@@ -93,6 +93,18 @@ void ResourceManager::unloadMusic( std::string key ) {
     }
 }
 
+void ResourceManager::loadResources() {
+    loadTextures();
+    loadSounds();
+    loadMusics();
+}
+
+void ResourceManager::unloadResources() {
+    unloadTextures();
+    unloadSounds();
+    unloadMusics();
+}
+
 std::map<std::string, Texture2D> &ResourceManager::getTextures() {
     return textures;
 }
