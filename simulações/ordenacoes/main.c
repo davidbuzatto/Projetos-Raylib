@@ -16,8 +16,8 @@ int main( void ) {
 
     GameWindow *gameWindow = createGameWindow(
         800,             // width
-        450,             // height
-        "Window Title",  // title
+        450,             // height   
+        "Ordenações",    // title
         60,              // target FPS
         true,            // antialiazing
         false,           // resizable

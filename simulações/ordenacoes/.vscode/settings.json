@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "resourcemanager.h": "c",
+        "gameworld.h": "c"
+    }
+}
