@@ -39,9 +39,9 @@ GameWorld* createGameWorld( void ) {
     //insertionSort( gw );
     //bubbleSort( gw );
     //shellSort( gw );
-    //mergeSort( gw ); // erro
+    //mergeSort( gw );
     //quickSort( gw );
-    heapSort( gw );
+    //heapSort( gw );
 
     return gw;
 
